@@ -1,0 +1,275 @@
+#!/usr/bin/env python
+'''
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *
+ *  Where noted, some portions of this project are reused under the MIT license from 
+ *  https://github.com/groove-x/mqtt_bridge
+ *
+ *
+ *  IoT Hub Relay Node for ROS1-based devices (rospy)
+ *  + Publishes content from chosen ROS topics to IoT Hub via JSON encapsulation
+ *  + Publishes content from IoT Hub to ROS topics via JSON encapsulation
+ *  + Executes commands from IoT Hub using ROS services
+ *  + Leverages Device Twin features to handle server-orchestrated subscriptions
+ *
+ *  Device Twin 'Desired' properties must contain (for example):
+ *  "ros_subscriptions": {
+ *      "rosout": "rosgraph_msgs.msg:Log",
+ *      "ros_topic": "ros_topic_publishing_type",
+ *      "ros_topic2": "ros_topic2_publishing_type"
+ *  }
+ *--------------------------------------------------------------------------------------------*/
+'''
+
+from __future__ import absolute_import
+from importlib import import_module
+import os.path
+import sys
+
+PYTHON_IOTHUB_CLIENT_PATH="/usr/local/lib/python2.7/dist-packages/iothub_client/"
+PYTHON_IOTHUB_CLIENT_LIBRARY="iothub_client.so"
+
+# Try to intercept path issues here. This is not a long-term fix, just to enable packaging for now.
+if os.path.isfile(os.path.join(PYTHON_IOTHUB_CLIENT_PATH, PYTHON_IOTHUB_CLIENT_LIBRARY)):
+    sys.path.insert(0, PYTHON_IOTHUB_CLIENT_PATH)
+
+try:
+    import iothub_client
+    from iothub_client import IoTHubClient, IoTHubClientError, IoTHubTransportProvider, IoTHubClientResult
+    from iothub_client import IoTHubMessage, IoTHubMessageDispositionResult, IoTHubError, DeviceMethodReturnValue
+except ImportError as e:
+    if "libboost" in e.message:
+        print "FATAL: libboost mismatch. Current versions of Azure IoT Hub Device SDK are built against libboost 1.54; either compile the library"
+        print "       from source against this system's libraries or install libboost 1.54."
+    else:
+        print "FATAL: Could not find iothub_client.so on PATH. Due to pip packaging issues, this is a manual operation for some users."
+        print "       Please either update the PYTHON_IOTHUB_CLIENT_PATH variable in the ros_azure_iothub.py script or set your PATH to include iothub_client.so"
+    print ""
+    print e
+    sys.exit()
+
+from rosbridge_library.internal import message_conversion
+from rosbridge_library.internal.services import ServiceCaller
+import json
+import rospy
+import argparse
+import threading
+import sys
+
+PROTOCOL = IoTHubTransportProvider.MQTT
+RECEIVE_CONTEXT = 0
+TWIN_CONTEXT = 0
+METHOD_CONTEXT = 0
+
+# From github.com/groove-x/mqtt_bridge
+def lookup_object(object_path, package='IoTHubRelayNode'):
+    module_name, obj_name = object_path.split(":")
+    module = import_module(module_name, package)
+    obj = getattr(module, obj_name)
+    return obj
+
+# From github.com/groove-x/mqtt_bridge
+def monkey_patch_message_conversion():
+    u""" modify _to_primitive_inst to distinct unicode and str conversion """
+    from rosbridge_library.internal.message_conversion import (
+        type_map, primitive_types, string_types, FieldTypeMismatchException,
+    )
+    def _to_primitive_inst(msg, rostype, roottype, stack):
+        # Typecheck the msg
+        msgtype = type(msg)
+        if msgtype in primitive_types and rostype in type_map[msgtype.__name__]:
+            return msg
+        elif msgtype is unicode and rostype in type_map[msgtype.__name__]:
+            return msg.encode("utf-8", "ignore")
+        elif msgtype is str and rostype in type_map[msgtype.__name__]:
+            return msg.decode("utf-8").encode("utf-8", "ignore")
+        raise FieldTypeMismatchException(roottype, stack, rostype, msgtype)
+    message_conversion._to_primitive_inst = _to_primitive_inst
+
+monkey_patch_message_conversion()
+
+class IoTHubRelayNode(object):
+
+    def _iot_hub_callback(self, msg, counter):
+        message_buffer = msg.get_bytearray()
+        size = len(message_buffer)
+        msg_str = message_buffer[:size].decode('utf-8')
+        msg_dict = json.loads(msg_str)
+
+        rospy.logdebug("Received IoT Hub Message: %s" % msg_str)
+
+        topic = msg_dict['topic']
+        msg_type = lookup_object(msg_dict['msg_type'])
+        msg_payload = msg_dict['payload']
+
+        if not issubclass(msg_type, rospy.Message):
+            raise TypeError("Incoming IoT Hub message specified invalid msg_type. Should be rospy.Message instance or its string representation")
+
+        ros_msg = message_conversion.populate_instance(msg_payload, msg_type())
+
+        publisher = next((x for x in self._publishes if x['topic'] == topic), None)
+        if publisher is None:
+            tmp_publisher = rospy.Publisher(topic, msg_type, queue_size=rospy.get_param("~iot_hub_relay_queue_size"))
+            this_publisher = {'topic':topic, 'msg_type':msg_type, 'publisher': tmp_publisher}
+            self._publishes.append(this_publisher)
+            publisher = this_publisher
+
+        publisher['publisher'].publish(ros_msg)
+
+        counter += 1
+
+        return IoTHubMessageDispositionResult.ACCEPTED
+
+    def _iot_hub_device_twin_callback(self, update_state, payload, user_context):
+        rospy.logdebug("Device twin update [%s] called. JSON payload is: %s" % (update_state, payload))
+        json_payload = json.loads(payload)
+
+        if 'ros_subscriptions' in json_payload:
+            for key, value in json_payload['ros_subscriptions'].iteritems():
+                rospy.loginfo("Device twin subscribe request received for topic '%s' (%s)" % (key, value))
+                self.subscribe_for_relay(key, value)
+
+            for item in self._watches:
+                if item['topic'] not in json_payload['ros_subscriptions']:
+                    rospy.loginfo("Device twin unsubscribe request received for topic '%s' (%s)" % (key, value))
+                    self.unsubscribe_for_relay(item['topic'])
+
+        if 'ros_publishes' in json_payload:
+            for key, value in json_payload['ros_publishes'].iteritems():
+                rospy.loginfo("Device twin publish request received for topic '%s' (%s)" % (key, value))
+                self.publish_from_relay(key, value)
+
+            for item in self._publishes:
+                if item['topic'] not in json_payload['ros_publishes']:
+                    rospy.loginfo("Device twin unpublish request received for topic '%s' (%s)" % (key, value))
+                    self.unpublish_from_relay(item['topic'])
+
+    def _iot_hub_device_method_callback(self, method_name, payload, user_context):
+        method_args = json.loads(payload)
+        result_payload = [0,0] # Using an array to allow for mutability inside the callbacks
+        evt = threading.Event() # Event semaphore to run these callbacks inline of the request
+
+        def _iot_hub_device_method_success_callback(payload):
+            result_payload[0] = True
+            result_payload[1] = payload
+            evt.set()
+        def _iot_hub_device_method_failure_callback(payload):
+            result_payload[0] = False
+            if isinstance(payload, Exception):
+                result_payload[1] = str(payload)
+            else:
+                result_payload[1] = payload
+            evt.set()
+
+        rospy.loginfo("Device method [%s] called. Firing Service Caller..." % method_name)
+
+        caller = ServiceCaller(method_name, method_args, _iot_hub_device_method_success_callback, _iot_hub_device_method_failure_callback)
+        caller.start()
+
+        evt.wait() # wait for the callback to fire
+
+        rospy.logdebug("Device method [%s] callback received from ROS. Firing response (%s, %s) to IoT Hub..." % (method_name, result_payload[0], result_payload[1]))
+
+        device_method_return_value = DeviceMethodReturnValue()
+        device_method_return_value.response = json.dumps(result_payload[1])
+        if result_payload[0] is True:
+            device_method_return_value.status = rospy.get_param("~device_method_success_code")
+        else:
+            device_method_return_value.status = rospy.get_param("~device_method_failure_code")
+        return device_method_return_value
+
+    def __init__(self, connection_string):
+        self._watches = []
+        self._publishes = []
+        self._counter = 0
+
+        self._client = IoTHubClient(connection_string, PROTOCOL)
+        if self._client.protocol == IoTHubTransportProvider.HTTP:
+            self._client.set_option("timeout", rospy.get_param("~timeout"))
+            self._client.set_option("MinimumPollingTime", rospy.get_param("~minimum_polling_time"))
+
+        self._client.set_option("messageTimeout", rospy.get_param("~message_timeout"))
+
+        if self._client.protocol == IoTHubTransportProvider.MQTT:
+            self._client.set_option("logtrace", 0)
+
+        if self._client.protocol == IoTHubTransportProvider.MQTT or self._client.protocol == IoTHubTransportProvider.MQTT_WS:
+            self._client.set_device_twin_callback(self._iot_hub_device_twin_callback, TWIN_CONTEXT)
+            self._client.set_device_method_callback(self._iot_hub_device_method_callback, METHOD_CONTEXT)
+
+        self._client.set_message_callback(self._iot_hub_callback, RECEIVE_CONTEXT)
+
+    def _send_iot_hub_message(self, raw_msg):
+        def _iot_hub_confirmation_callback(message, result, user_context):
+            pass
+        self._client.send_event_async(IoTHubMessage(json.dumps(raw_msg)), _iot_hub_confirmation_callback, self._counter)
+
+    def publish_from_relay(self, topic, msg_type):
+        registered_publish = next((x for x in self._publishes if x['topic'] == topic), None)
+        if registered_publish is not None and registered_publish['msg_type'] == msg_type:
+            return
+        elif registered_publish is not None:
+            self._publishes.remove(registered_publish)
+            registered_publish['publisher'].unregister()
+            registered_publish = None
+
+        if registered_publish is None:
+            publisher = rospy.Publisher(topic, lookup_object(msg_type), queue_size=10)
+            self._publishes.append({'topic':topic, 'msg_type':msg_type, 'publisher': publisher})
+            rospy.logdebug("Successfully announced publish of ROS topic '%s' (%s)" % (topic, msg_type))
+
+    def unpublish_from_relay(self, topic):
+        registered_publish = next((x for x in self._publishes if x['topic'] == topic), None)
+        if registered_publish is None:
+            return
+        else:
+            self._publishes.remove(registered_publish)
+            registered_publish['publisher'].unregister()
+            rospy.logdebug("Successfully announced unpublish of ROS topic '%s' (%s)" % topic)
+
+    def subscribe_for_relay(self, topic, msg_type):
+        def _ros_callback(msg):
+            raw_msg = {'topic': topic, 'msg_type': msg_type, 'payload': message_conversion.extract_values(msg)}
+            self._send_iot_hub_message(raw_msg)
+
+        registered_watch = next((x for x in self._watches if x['topic'] == topic), None)
+        if registered_watch is not None and registered_watch['msg_type'] == msg_type:
+            return
+        elif registered_watch is not None:
+            self._watches.remove(registered_watch)
+            registered_watch['subscriber'].unregister()
+            registered_watch = None
+
+        if registered_watch is None:
+            subscriber = rospy.Subscriber(topic, lookup_object(msg_type), _ros_callback)
+            self._watches.append({'topic':topic, 'msg_type':msg_type, 'subscriber': subscriber})
+            rospy.logdebug("Successfully subscribed to ROS topic '%s' (%s)" % (topic, msg_type))
+
+
+    def unsubscribe_for_relay(self, topic):
+        registered_watch = next((x for x in self._watches if x['topic'] == topic), None)
+        if registered_watch is None:
+            return
+        else:
+            self._watches.remove(registered_watch)
+            registered_watch['subscriber'].unregister()
+            rospy.logdebug("Successfully unsubscribed from ROS topic '%s' (%s)" % topic)
+
+def run_iot_hub_relay(node_name='iot_hub_relay'):
+    rospy.init_node(node_name)
+    IoTHubRelayNode(rospy.get_param("~connection_string"))
+    print "IoT Hub Relay running as '%s'" % node_name
+    rospy.spin()
+
+if __name__ == "__main__":
+    sys.argv = rospy.myargv(argv=sys.argv)
+    parser = argparse.ArgumentParser(description='Relay information and execute commands in a channel between Azure IoT Hub and ROS')
+    parser.add_argument("-n", "--node_name", default='iot_hub_relay', type=str, help='ROS Node Name')
+    args = parser.parse_args()
+
+    try:
+        run_iot_hub_relay(args.node_name)
+    except rospy.ROSInterruptException:
+        pass
