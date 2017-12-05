@@ -28,13 +28,6 @@ from importlib import import_module
 import os.path
 import sys
 
-PYTHON_IOTHUB_CLIENT_PATH="/usr/local/lib/python2.7/dist-packages/iothub_client/"
-PYTHON_IOTHUB_CLIENT_LIBRARY="iothub_client.so"
-
-# Try to intercept path issues here. This is not a long-term fix, just to enable packaging for now.
-if os.path.isfile(os.path.join(PYTHON_IOTHUB_CLIENT_PATH, PYTHON_IOTHUB_CLIENT_LIBRARY)):
-    sys.path.insert(0, PYTHON_IOTHUB_CLIENT_PATH)
-
 try:
     import iothub_client
     from iothub_client import IoTHubClient, IoTHubClientError, IoTHubTransportProvider, IoTHubClientResult
@@ -44,8 +37,8 @@ except ImportError as e:
         print "FATAL: libboost mismatch. Current versions of Azure IoT Hub Device SDK are built against libboost 1.54; either compile the library"
         print "       from source against this system's libraries or install libboost 1.54."
     else:
-        print "FATAL: Could not find iothub_client.so on PATH. Due to pip packaging issues, this is a manual operation for some users."
-        print "       Please either update the PYTHON_IOTHUB_CLIENT_PATH variable in the ros_azure_iothub.py script or set your PATH to include iothub_client.so"
+        print "FATAL: Could not find iothub_client.so on PATH. This may mean pip installation of the azure-iothub-device-client package has failed."
+        print "       Please copy the iothub_client.so file into a directory on the PATH, or the working directory of this script."
     print ""
     print e
     sys.exit()
