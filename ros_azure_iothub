@@ -15,11 +15,25 @@
  *  + Leverages Device Twin features to handle server-orchestrated subscriptions
  *
  *  Device Twin 'Desired' properties must contain (for example):
- *  "ros_subscriptions": {
- *      "rosout": "rosgraph_msgs.msg:Log",
- *      "ros_topic": "ros_topic_publishing_type",
- *      "ros_topic2": "ros_topic2_publishing_type"
+ *  "ros_relays": {
+ *      "0": {
+ *          "topic": "rosout",
+ *          "msg_type": "rosgraph_msgs.msg:Log"
+ *          "relay_mode": 2
+ *       },
+ *      "1": {
+ *          "topic": "other_topic",
+ *          "msg_type": "other_module.msg:ModuleMessage"
+ *          "relay_mode": 3
+ *       }
  *  }
+ *
+ *  Key for relay entry (in this example "0" and "1") must only be unique -- otherwise it is unused.
+ *
+ *  Note: "relay_mode" parameter is one of:
+ *    1: Relay traffic from IoT Hub to ROS on this topic
+ *    2: Relay traffic from ROS to IoT Hub on this topic
+ *    3: Relay traffic from IoT Hub to ROS, and from ROS to IoT Hub on this topic
  *--------------------------------------------------------------------------------------------*/
 '''
 
