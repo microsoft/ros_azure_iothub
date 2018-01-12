@@ -3,6 +3,7 @@
   <node pkg="ros_azure_iothub" type="ros_azure_iothub" name="ros_azure_iothub" output="screen">
     <rosparam subst_value="true">
       connection_string: $(arg connection_string)
+      prefs_storage_file: '~/iot_relay.conf'
       timeout: 24100
       minimum_polling_time: 9
       message_timeout: 10000

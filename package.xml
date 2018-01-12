@@ -17,5 +17,5 @@
   <exec_depend>rospy</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
-  <exec_depend>iothub_client</exec_depend>
+  <exec_depend>azure-iothub-device-client-pip</exec_depend>
 </package>
