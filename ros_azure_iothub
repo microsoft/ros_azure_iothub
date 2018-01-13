@@ -298,7 +298,7 @@ class IoTHubRelayNode(object):
         self._client.send_event_async(msg, _iot_hub_confirmation_callback, self._counter)
 
 def run_iot_hub_relay(node_name='ros_azure_iothub'):
-    rospy.init_node(node_name, log_level=rospy.DEBUG)
+    rospy.init_node(node_name)
     IoTHubRelayNode(node_name, rospy.get_param("~connection_string"))
     rospy.loginfo("IoT Hub Relay running as '%s'" % node_name)
     rospy.spin()
