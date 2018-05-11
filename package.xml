@@ -11,9 +11,9 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <depend>rospy</depend>
   <depend>std_msgs</depend>
   
+  <exec_depend>rospy</exec_depend>
   <exec_depend>rosbridge_library</exec_depend>
   <exec_depend>azure-iothub-device-client-pip</exec_depend>
 </package>
