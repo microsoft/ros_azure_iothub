@@ -239,6 +239,7 @@ class IoTHubRelayNode(object):
         topic_matched_entity = self.get_relay_by_topic(topic)
         if topic_matched_entity is None:
             topic_matched_entity = RelayEntity(self, topic, str(msg_type), relay_mode)
+            self._relays.append(topic_matched_entity)
             rospy.logdebug("Generated relay entity for topic '%s' (%s) - Relay mode %s" % (topic, msg_type, relay_mode))
         elif topic_matched_entity.relay_mode != RelayEntity.RELAY_MODE_BIDIRECTIONAL and topic_matched_entity.relay_mode != relay_mode:
             topic_matched_entity.relay_mode = relay_mode
