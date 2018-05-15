@@ -297,8 +297,11 @@ class IoTHubRelayNode(object):
         msg_props.add('topic', str(topic))
         self._client.send_event_async(msg, _iot_hub_confirmation_callback, self._counter)
 
-def run_iot_hub_relay(node_name='ros_azure_iothub'):
-    rospy.init_node(node_name)
+def run_iot_hub_relay(node_name='ros_azure_iothub', verbose=False):
+    if verbose:
+        rospy.init_node(node_name, log_level=rospy.DEBUG)
+    else:
+        rospy.init_node(node_name)
     IoTHubRelayNode(node_name, rospy.get_param("~connection_string"))
     rospy.loginfo("IoT Hub Relay running as '%s'" % node_name)
     rospy.spin()
@@ -307,9 +310,10 @@ if __name__ == "__main__":
     sys.argv = rospy.myargv(argv=sys.argv)
     parser = argparse.ArgumentParser(description='Relay information and execute commands in a channel between Azure IoT Hub and ROS')
     parser.add_argument("-n", "--node_name", default='ros_azure_iothub', type=str, help='ROS Node Name')
+    parser.add_argument("-v", "--verbose", default=False, type=bool, help='Set verbose true to turn on debug messages')
     args = parser.parse_args()
 
     try:
-        run_iot_hub_relay(args.node_name)
+        run_iot_hub_relay(args.node_name, args.verbose)
     except rospy.ROSInterruptException:
         pass
