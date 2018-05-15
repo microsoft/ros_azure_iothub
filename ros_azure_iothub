@@ -265,7 +265,8 @@ class IoTHubRelayNode(object):
                 rospy.loginfo("Adding cached relay for %s (%s) - Mode %s" % (relay['topic'], relay['msg_type'], relay['relay_mode']))
 
     def __init__(self, node_name, connection_string):
-        self.node_name = node_name
+        # Get fully resolved name (including namespace, if any)
+        self.node_name = rospy.get_name()
         self._relays = []
         self._persistence = []
         self._counter = 0
@@ -294,8 +295,12 @@ class IoTHubRelayNode(object):
             pass
         msg = IoTHubMessage(json.dumps(raw_msg))
         msg_props = msg.properties()
-        msg_props.add('topic', str(topic))
+        msg_props.add('topic', str(self.replace_forward_slash(topic)))
         self._client.send_event_async(msg, _iot_hub_confirmation_callback, self._counter)
+
+    def replace_forward_slash(self, input, replacement = "."):
+        result = input.replace("/", replacement)
+        return result
 
 def run_iot_hub_relay(node_name='ros_azure_iothub'):
     rospy.init_node(node_name)
