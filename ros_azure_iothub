@@ -204,7 +204,7 @@ class IoTHubRelayNode(object):
                         rospy.logerr("Relay mode for topic '%s' specified as '%s', which is not a supported value." % (topic, value['relay_mode']))
                         continue
                 self.register_relay(topic, msg_type, relay_mode)
-        self.save_relays()
+            self.save_relays()
 
     def _iot_hub_incoming_message_callback(self, msg, counter):
         try:
