@@ -284,6 +284,14 @@ class IoTHubRelayNode(object):
             self._client.set_device_twin_callback(self._iot_hub_device_twin_callback, TWIN_CONTEXT)
             self._client.set_device_method_callback(self._iot_hub_device_method_callback, METHOD_CONTEXT)
 
+	if rospy.has_param("~x509cert") and rospy.has_param("~x509privatekey"):
+            x509cert = rospy.get_param("~x509cert")
+            x509privatekey = rospy.get_param("~x509privatekey")
+            x509cert = self.read_cert_file(x509cert)
+            x509privatekey = self.read_cert_file(x509privatekey)
+            self._client.set_option("x509certificate", x509cert)
+            self._client.set_option("x509privatekey", x509privatekey)
+
         self._client.set_message_callback(self._iot_hub_incoming_message_callback, RECEIVE_CONTEXT)
 
         rospy.loginfo("Loading relay bridges from rosparam...")
@@ -296,6 +304,11 @@ class IoTHubRelayNode(object):
         msg_props = msg.properties()
         msg_props.add('topic', str(topic))
         self._client.send_event_async(msg, _iot_hub_confirmation_callback, self._counter)
+
+    def read_cert_file(self, path):
+        with open(path, 'r') as file:
+            contents = file.read().strip()
+        return contents
 
 def run_iot_hub_relay(node_name='ros_azure_iothub'):
     rospy.init_node(node_name)
