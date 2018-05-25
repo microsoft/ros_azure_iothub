@@ -280,13 +280,14 @@ class IoTHubRelayNode(object):
         if self._client.protocol == IoTHubTransportProvider.MQTT:
             self._client.set_option("logtrace", 0)
 
-        if rospy.has_param("~x509cert") and rospy.has_param("~x509privatekey"):
-            x509cert = rospy.get_param("~x509cert")
-            x509privatekey = rospy.get_param("~x509privatekey")
-            x509cert = self.read_cert_file(x509cert)
-            x509privatekey = self.read_cert_file(x509privatekey)
-            self._client.set_option("x509certificate", x509cert)
-            self._client.set_option("x509privatekey", x509privatekey)
+        if "x509=true" in connection_string:
+            if rospy.has_param("~x509cert") and rospy.has_param("~x509privatekey"):
+                x509cert = x509cert = self.read_cert_file(rospy.get_param("~x509cert"))
+                x509privatekey = self.read_cert_file(rospy.get_param("~x509privatekey"))
+                self._client.set_option("x509certificate", x509cert)
+                self._client.set_option("x509privatekey", x509privatekey)
+            else: 
+                rospy.logerr("Certificate info is missing from rosparam...")
 
         if self._client.protocol == IoTHubTransportProvider.MQTT or self._client.protocol == IoTHubTransportProvider.MQTT_WS:
             self._client.set_device_twin_callback(self._iot_hub_device_twin_callback, TWIN_CONTEXT)
