@@ -280,17 +280,17 @@ class IoTHubRelayNode(object):
         if self._client.protocol == IoTHubTransportProvider.MQTT:
             self._client.set_option("logtrace", 0)
 
-        if self._client.protocol == IoTHubTransportProvider.MQTT or self._client.protocol == IoTHubTransportProvider.MQTT_WS:
-            self._client.set_device_twin_callback(self._iot_hub_device_twin_callback, TWIN_CONTEXT)
-            self._client.set_device_method_callback(self._iot_hub_device_method_callback, METHOD_CONTEXT)
-
-	if rospy.has_param("~x509cert") and rospy.has_param("~x509privatekey"):
+        if rospy.has_param("~x509cert") and rospy.has_param("~x509privatekey"):
             x509cert = rospy.get_param("~x509cert")
             x509privatekey = rospy.get_param("~x509privatekey")
             x509cert = self.read_cert_file(x509cert)
             x509privatekey = self.read_cert_file(x509privatekey)
             self._client.set_option("x509certificate", x509cert)
             self._client.set_option("x509privatekey", x509privatekey)
+
+        if self._client.protocol == IoTHubTransportProvider.MQTT or self._client.protocol == IoTHubTransportProvider.MQTT_WS:
+            self._client.set_device_twin_callback(self._iot_hub_device_twin_callback, TWIN_CONTEXT)
+            self._client.set_device_method_callback(self._iot_hub_device_method_callback, METHOD_CONTEXT)
 
         self._client.set_message_callback(self._iot_hub_incoming_message_callback, RECEIVE_CONTEXT)
 
