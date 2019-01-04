@@ -1,0 +1,16 @@
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: seanyen-msft/rosonwindows_ci
+      endpoint: github
+
+jobs:
+- template: build.yml@templates  # Template reference
+  parameters:
+    ros_metapackage: 'ros-melodic-ros_core'
+    pre_build:
+      - script: |
+          git clone https://github.com/ms-iot/abseil-cpp -b init_windows
+          git clone https://github.com/ms-iot/ros_type_introspection -b init_windows
+        workingDirectory: '$(Build.ArtifactStagingDirectory)\src'

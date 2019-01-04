@@ -1,5 +1,5 @@
 <package format="2">
-  <name>ros_azure_iothub</name>
+  <name>rospy_azure_iothub</name>
   <version>0.0.1</version>
   <description>
   This package interfaces with Azure IoT Hub to provide cloud-based device management and command and control services.
@@ -15,7 +15,7 @@
   <build_depend>std_msgs</build_depend>
 
   <exec_depend>rospy</exec_depend>
-  <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
-  <exec_depend>azure-iothub-device-client-pip</exec_depend>
+  <exec_depend>python-azure-iothub-device-client</exec_depend>
+  <depend>rosbridge_library</depend>
 </package>

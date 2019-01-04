@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(ros_azure_iothub)
+project(rospy_azure_iothub)
 
 find_package(catkin REQUIRED COMPONENTS
   rospy
@@ -11,7 +11,11 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-install(PROGRAMS
+catkin_install_python(PROGRAMS
   ros_azure_iothub
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )

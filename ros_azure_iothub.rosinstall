@@ -1,0 +1,13 @@
+# This file is for ROS on Windows users' convenience to checkout the dependencies on top of ros-melodic-desktop image.
+- git:
+    local-name: abseil-cpp
+    uri: https://github.com/ms-iot/abseil-cpp
+    version: init_windows
+- git:
+    local-name: ros_type_introspection
+    uri: https://github.com/ms-iot/ros_type_introspection
+    version: init_windows
+- git:
+    local-name: rosbridge_suite
+    uri: https://github.com/RobotWebTools/rosbridge_suite
+    version: develop
