@@ -17,5 +17,5 @@
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>python-azure-iothub-device-client</exec_depend>
-  <depend>rosbridge_library</depend>
+  <exec_depend>rosbridge_library</exec_depend>
 </package>
