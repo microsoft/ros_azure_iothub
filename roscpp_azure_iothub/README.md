@@ -85,7 +85,11 @@ Here is a JSON example to report `/rosout`:
 }
 ```
 
-And add the `ros_relays` block to the device twin which you are about to connect in the next step.
+And add the `ros_relays` block to the device twin which you are about to connect in the next step. Meanwhile, you can run the following Azure PowerShell cmdlet to wait for events from IoT Hub.
+
+```
+az iot hub monitor-events --hub-name <YourIoTHubName> --output table
+```
 
 
 # Deployment (Client side)
@@ -95,6 +99,8 @@ roslaunch roscpp_azure_iothub sample.launch connection_string:="HostName=sample.
 ```
 
 This value can also be set in the ROS Parameter Server at `/roscpp_azure_iothub_node/connection_string`.
+
+Now you can run some other ROS scenarios and see the `/rosout` being reported back to IoT Hub.
 
 # Contributing
 
