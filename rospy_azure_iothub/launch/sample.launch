@@ -1,10 +1,9 @@
 <launch>
   <arg name="connection_string" default="HostName=sample.azure-devices.net;DeviceId=rosbot;SharedAccessKey=sampleKey" />
-  <arg name="prefs_storage_file" default="~/iot_relay.conf" />
   <node pkg="rospy_azure_iothub" type="ros_azure_iothub" name="ros_azure_iothub" output="screen">
     <rosparam subst_value="true">
       connection_string: $(arg connection_string)
-      prefs_storage_file: $(arg prefs_storage_file)
+      prefs_storage_file: '~/iot_relay.conf'
       timeout: 24100
       minimum_polling_time: 9
       message_timeout: 10000
