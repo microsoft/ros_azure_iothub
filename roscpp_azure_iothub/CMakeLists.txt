@@ -12,10 +12,17 @@ find_package(catkin REQUIRED COMPONENTS
   ros_type_introspection
 )
 
-## System dependencies are found with CMake's conventions
-find_package(azure_c_shared_utility REQUIRED)
-find_package(azure_iot_sdks REQUIRED)
-find_package(umqtt REQUIRED)
+if (WINDOWS)
+  find_package(azure_c_shared_utility REQUIRED)
+  find_package(azure_iot_sdks REQUIRED)
+  find_package(umqtt REQUIRED)
+else (WINDOWS)
+  set(IOTHUB_CLIENT_INCLUDES ".." "/usr/include/azureiot" "/usr/include/azureiot/inc" "./parson")
+  add_library(parson STATIC
+    parson/parson.c
+    parson/parson.h
+  )
+endif()
 
 ###################################
 ## catkin specific configuration ##
@@ -38,11 +45,31 @@ add_executable(${PROJECT_NAME}_node src/ros_azure_iothub_cpp_node.cpp)
 
 link_directories(${catkin_LIBRARY_DIRS})
 
-target_link_libraries(${PROJECT_NAME}_node
-   ${catkin_LIBRARIES}
-   iothub_client
-   iothub_client_mqtt_ws_transport
-)
+if (WINDOWS)
+  target_link_libraries(${PROJECT_NAME}_node
+    ${catkin_LIBRARIES}
+    iothub_client
+    iothub_client_mqtt_ws_transport
+  )
+else (WINDOWS)
+  target_link_libraries(${PROJECT_NAME}_node
+    ${catkin_LIBRARIES}
+    iothub_client
+    iothub_client_mqtt_transport
+    umqtt
+    aziotsharedutil
+    pthread
+    curl
+    ssl
+    crypto
+    m
+    uuid
+    parson
+    prov_auth_client
+    hsm_security_client
+    uhttp
+  )
+endif()
 
 #############
 ## Install ##

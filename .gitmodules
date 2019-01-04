@@ -1,0 +1,3 @@
+[submodule "roscpp_azure_iothub/parson"]
+	path = roscpp_azure_iothub/parson
+	url = https://github.com/kgabis/parson.git
