@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>roscpp_azure_iothub</name>
+  <version>0.0.1</version>
+  <description>
+  This package interfaces with Azure IoT Hub to provide cloud-based device management and command and control services over Azure IoT C99 SDK.
+  </description>
+
+  <maintainer email="vtam@microsoft.com">Vincent Tam</maintainer>
+  <maintainer email="seanyen@microsoft.com">Sean Yen</maintainer>
+  <url type="website">https://github.com/Microsoft/ros_azure_iothub</url>
+  <author>Vincent Tam</author>
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>topic_tools</depend>
+  <depend>ros_type_introspection</depend>
+  <depend>libazure-iot-sdk-c</depend>
+</package>
