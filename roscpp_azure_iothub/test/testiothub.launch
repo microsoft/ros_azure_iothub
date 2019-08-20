@@ -1,0 +1,14 @@
+<launch>
+
+  <node pkg="roscpp_azure_iothub" type="roscpp_azure_iothub_node" name="roscpp_azure_iothub_node" output="screen">
+    <param name="connection_string" value="HostName=PEBJIotHub.azure-devices.net;DeviceId=x1;SharedAccessKey=o32dGNIFHfC0+jBxmkzdgSvs6EdEIPCaX54Su26HCmw="/>
+  </node>
+
+  <node pkg="dynamic_tutorials" type="dynamic_tutorials_node" name="dynamic_tutorials_node" output="screen"/>
+
+  <test test-name="roscpp_azure_iothub_testnode" pkg="roscpp_azure_iothub" type="roscpp_azure_iothub_testnode" name="roscpp_azure_iothub_testnode">
+    <param name="iot_hub_connection_string" value="HostName=PEBJIotHub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=/mjPM4wa9eL2WD1dGTf1JKE/+RUsbf48ZdC6hd04Msw=" />
+    <param name="device_name" value="x1" />
+  </test>
+
+</launch>

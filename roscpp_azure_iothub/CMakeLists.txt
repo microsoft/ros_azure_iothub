@@ -20,7 +20,7 @@ if (WIN32)
   find_package(azure_c_shared_utility REQUIRED)
   find_package(azure_iot_sdks REQUIRED)
   find_package(umqtt REQUIRED)
-  find_package(uamqp REQUIRED)
+  find_package(uamqp REQUIRED)  
 else (WIN32)
   set(IOTHUB_CLIENT_INCLUDES ".." "/usr/include/azureiot" "/usr/include/azureiot/inc" "./parson")
   add_library(parson STATIC
@@ -55,14 +55,12 @@ if (WIN32)
     ${catkin_LIBRARIES}
     iothub_client
     iothub_client_mqtt_ws_transport
-    iothub_service_client
   )
 else (WIN32)
   target_link_libraries(${PROJECT_NAME}_node
     ${catkin_LIBRARIES}
     iothub_client
     iothub_client_mqtt_transport
-    iothub_service_client
     umqtt
     aziotsharedutil
     pthread
@@ -91,3 +89,9 @@ install(TARGETS ${PROJECT_NAME}_node
 install(DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
+
+#if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+  add_rostest_gtest(${PROJECT_NAME}_testnode test/testiothub.launch test/testiothub.cpp)
+  target_link_libraries(${PROJECT_NAME}_testnode iothub_service_client ${catkin_LIBRARIES} )
+#endif()
