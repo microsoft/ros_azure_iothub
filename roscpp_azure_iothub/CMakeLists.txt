@@ -13,12 +13,14 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   topic_tools
   ros_type_introspection
+  dynamic_reconfigure
 )
 
 if (WIN32)
   find_package(azure_c_shared_utility REQUIRED)
   find_package(azure_iot_sdks REQUIRED)
   find_package(umqtt REQUIRED)
+  find_package(uamqp REQUIRED)
 else (WIN32)
   set(IOTHUB_CLIENT_INCLUDES ".." "/usr/include/azureiot" "/usr/include/azureiot/inc" "./parson")
   add_library(parson STATIC
@@ -53,12 +55,14 @@ if (WIN32)
     ${catkin_LIBRARIES}
     iothub_client
     iothub_client_mqtt_ws_transport
+    iothub_service_client
   )
 else (WIN32)
   target_link_libraries(${PROJECT_NAME}_node
     ${catkin_LIBRARIES}
     iothub_client
     iothub_client_mqtt_transport
+    iothub_service_client
     umqtt
     aziotsharedutil
     pthread
