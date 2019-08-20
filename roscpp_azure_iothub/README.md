@@ -23,7 +23,7 @@ Here is an example how to build it for ROS on Windows.
 > pushd src
 > git clone https://github.com/ms-iot/abseil-cpp -b init_windows
 > git clone https://github.com/ms-iot/ros_type_introspection -b init_windows
-> git clone https://github.com/Microsoft/ros_azure_iothub
+> git clone --recursive https://github.com/Microsoft/ros_azure_iothub
 > popd
 
 > :: install system dependencies
@@ -48,7 +48,7 @@ $ catkin_init_workspace src
 
 $ # checkout required ROS package sources
 $ pushd src
-$ git clone https://github.com/Microsoft/ros_azure_iothub
+$ git clone --recursive https://github.com/Microsoft/ros_azure_iothub
 $ popd
 
 $ # install system dependencies
@@ -65,7 +65,7 @@ $ catkin_make install
 $ source /install/setup.bash
 ```
 
-# Deployment (IoT Hub)
+# Deployment (IoT Hub for telemetry reporting)
 Device twins are JSON documents that store device state information including metadata, configurations, and conditions. Azure IoT Hub maintains a device twin for each device that you connect to IoT Hub. And we are using `desired` properties as a channel to ask our ROS node what ROS topics to report.
 
 Here is a JSON example to report `/rosout`:
@@ -91,6 +91,31 @@ And add the `ros_relays` block to the device twin which you are about to connect
 az iot hub monitor-events --hub-name <YourIoTHubName> --output table
 ```
 
+# Deployment (IoT Hub for dynamic configuration)
+[Dynamic Reconfiguration](http://wiki.ros.org/dynamic_reconfigure) provides a way to change the node parameters during runtime without restarting the node.
+Similar as the telemetry reporting, we are using the device twin `desired` properties as a channel to ask our ROS node what dynamic parameters to reconfigure.
+
+Here is a JSON example to reconfigure the string type parameter `/dynamic_tutorials_node/str_param` with the new value:
+```
+{
+    "deviceId": "devA",
+    ...
+    "properties": {
+        "desired": {
+            "ros_dynamic_configurations": {
+                "0": {
+                    "node": "/dynamic_tutorials_node", 
+                    "param": "str_param",
+                    "type": "string"
+                    "value": "HelloWorld!",
+                },
+            ...
+        },
+        ...
+    }
+}
+```
+Currently 4 types of parameters can be dynamically reconfigured, they are "string", "int", "double" and "bool".
 
 # Deployment (Client side)
 This node can be run using `roslaunch` (replacing the value for `connection_string` with the value given by Azure IoT Hub):
@@ -100,7 +125,7 @@ roslaunch roscpp_azure_iothub sample.launch connection_string:="HostName=sample.
 
 This value can also be set in the ROS Parameter Server at `/roscpp_azure_iothub_node/connection_string`.
 
-Now you can run some other ROS scenarios and see the `/rosout` being reported back to IoT Hub.
+Now you can run some other ROS scenarios and see the `/rosout` being reported back to IoT Hub or the node parameters being dynamically reconfigured.
 
 # Contributing
 
