@@ -6,7 +6,12 @@
 #include <stdio.h>
 
 // Azure IoT Hub
+#ifdef _WIN32
 #include <azure_c_shared_utility/macro_utils.h>
+#else
+#include <azure_macro_utils/macro_utils.h>
+#endif
+
 #include <azure_c_shared_utility/threadapi.h>
 #include <azure_c_shared_utility/platform.h>
 #include <iothub_device_client.h>
@@ -163,7 +168,11 @@ static void send_confirm_callback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void
     (void)userContextCallback;
     // When a message is sent this callback will get envoked
     g_message_count_send_confirmations++;
+    #ifdef _WIN32
     ROS_INFO("Confirmation callback received for message %lu with result %s\r\n", (unsigned long)g_message_count_send_confirmations, ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result));
+    #else
+    ROS_INFO("Confirmation callback received for message %lu with result %s\r\n", (unsigned long)g_message_count_send_confirmations, MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result));
+    #endif
 }
 
 static bool IsTopicAvailableForSubscribe(const char* topicName)

@@ -61,6 +61,7 @@ $ sudo apt-get update
 $ sudo apt-get install -y azure-iot-sdk-c-dev
 
 $ # build it and source install environment
+$ chmod a+x src/ros_azure_iothub/dynamic_tutorials/cfg/Tutorials.cfg
 $ catkin_make install
 $ source /install/setup.bash
 ```
@@ -95,7 +96,7 @@ az iot hub monitor-events --hub-name <YourIoTHubName> --output table
 [Dynamic Reconfiguration](http://wiki.ros.org/dynamic_reconfigure) provides a way to change the node parameters during runtime without restarting the node.
 Similar as the telemetry reporting, we are using the device twin `desired` properties as a channel to ask our ROS node what dynamic parameters to reconfigure.
 
-Here is a JSON example to reconfigure the string type parameter `/dynamic_tutorials_node/str_param` with the new value:
+Here is a JSON example to reconfigure the parameters of `/dynamic_tutorials_node` with the new value:
 ```
 {
     "deviceId": "devA",
@@ -104,11 +105,31 @@ Here is a JSON example to reconfigure the string type parameter `/dynamic_tutori
         "desired": {
             "ros_dynamic_configurations": {
                 "0": {
-                    "node": "/dynamic_tutorials_node", 
-                    "param": "str_param",
-                    "type": "string"
-                    "value": "HelloWorld!",
+                        "node": "/dynamic_tutorials_node", 
+                        "param": "str_param",
+                        "type":  "string"
+                        "value": "HelloWorld!",
                 },
+                "1": {
+                        "node": "/dynamic_tutorials_node",
+                        "param": "int_param",
+                        "type":  "int"
+                        "value": "33",
+
+                     },
+                "2": {
+                        "node": "/dynamic_tutorials_node",
+                        "param": "double_param",
+                        "type":  "double"
+                        "value": "0.55",
+                     },
+
+                "3": {
+                        "node": "/dynamic_tutorials_node",
+                        "param": "bool_param",
+                        "type":  "bool",
+                        "value": "1"
+                     }
             ...
         },
         ...
