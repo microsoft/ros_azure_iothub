@@ -115,7 +115,6 @@ Here is a JSON example to reconfigure the parameters of `/dynamic_tutorials_node
                         "param": "int_param",
                         "type":  "int"
                         "value": "33",
-
                      },
                 "2": {
                         "node": "/dynamic_tutorials_node",
