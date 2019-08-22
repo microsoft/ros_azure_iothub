@@ -37,8 +37,8 @@ struct ROS_Azure_IoT_Hub {
     std::vector<ros::Subscriber> subscribers;
     std::mutex mtx;
     std::condition_variable cv;
-	std::vector<std::string> topicsToSubscribe;
-	int signal;
+    std::vector<std::string> topicsToSubscribe;
+    int signal;
 };
 
 static IOTHUBMESSAGE_DISPOSITION_RESULT receive_msg_callback(IOTHUB_MESSAGE_HANDLE message, void* user_context)
@@ -46,8 +46,6 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT receive_msg_callback(IOTHUB_MESSAGE_HAND
     (void)user_context;
     const char* messageId;
     const char* correlationId;
-	
-	printf("receive_msg_callback\n");
 
     // Message properties
     if ((messageId = IoTHubMessage_GetMessageId(message)) == NULL)
@@ -146,7 +144,7 @@ static void connection_status_callback(IOTHUB_CLIENT_CONNECTION_STATUS result, I
 {
     (void)reason;
     (void)user_context;
-	printf("connection_status_callback\n");
+
     // This sample DOES NOT take into consideration network outages.
     if (result == IOTHUB_CLIENT_CONNECTION_AUTHENTICATED)
     {
@@ -221,16 +219,13 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
                    RosIntrospection::Parser& parser,
                    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle)
 {
-    printf("topicCallback\n");
     const std::string&  datatype   =  msg->getDataType();
     const std::string&  definition =  msg->getMessageDefinition();
 
-    // don't worry if you do this more than once: already registered message are not overwritten.
     parser.registerMessageDefinition( topic_name,
                                       RosIntrospection::ROSType(datatype),
                                       definition );
 
-    // reuse these opbects to improve efficiency ("static" makes them persistent)
     static std::vector<uint8_t> buffer;
     static std::map<std::string,FlatMessage>   flat_containers;
     static std::map<std::string,RenamedValues> renamed_vectors;
@@ -247,7 +242,6 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
     parser.deserializeIntoFlatContainer( topic_name, absl::Span<uint8_t>(buffer), &flat_container, 100);
     parser.applyNameTransform( topic_name, flat_container, &renamed_values );
 
-    // Print the content of the message
     printf("--------- %s ----------\n", topic_name.c_str() );
     sendMsgToAzureIoTHub(topic_name.c_str(), deviceHandle);
     for (auto it: renamed_values)
@@ -297,9 +291,9 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
     {
         printf("  %s \n", json_object_get_name(arrayObject, i));
         JSON_Value* value = json_object_get_value_at(arrayObject, i);
-        const char* topicToSubscribe = json_value_get_string(value);   //  ?? Do we need to free this memory??
+        const char* topicToSubscribe = json_value_get_string(value);
         printf("  %s \n", json_value_get_string(value));
-        
+
         if (IsTopicAvailableForSubscribe(topicToSubscribe))
         {
             iotHub->topicsToSubscribe.push_back(topicToSubscribe);
@@ -310,7 +304,6 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
     iotHub->signal = 1;
     iotHub->cv.notify_all();
 }
-
 
 static int InitializeAzureIoTHub(ROS_Azure_IoT_Hub* iotHub)
 {
@@ -346,7 +339,7 @@ static int InitializeAzureIoTHub(ROS_Azure_IoT_Hub* iotHub)
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "universal_subscriber");
+    ros::init(argc, argv, "ros_azure_iothub");
         
     ROS_Azure_IoT_Hub iotHub;
     iotHub.signal = 0;
