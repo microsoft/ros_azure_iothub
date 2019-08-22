@@ -43,7 +43,7 @@ struct ROS_Azure_IoT_Hub {
     Parser parser;
     ros::NodeHandle nh;
     std::vector<ros::Subscriber> subscribers;
-	std::vector<std::string> topicsToSubscribe;
+    std::vector<std::string> topicsToSubscribe;
 };
 
 static IOTHUBMESSAGE_DISPOSITION_RESULT receive_msg_callback(IOTHUB_MESSAGE_HANDLE message, void* user_context)
@@ -51,8 +51,6 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT receive_msg_callback(IOTHUB_MESSAGE_HAND
     (void)user_context;
     const char* messageId;
     const char* correlationId;
-	
-	ROS_INFO("receive_msg_callback\r\n");
 
     // Message properties
     if ((messageId = IoTHubMessage_GetMessageId(message)) == NULL)
@@ -151,7 +149,7 @@ static void connection_status_callback(IOTHUB_CLIENT_CONNECTION_STATUS result, I
 {
     (void)reason;
     (void)user_context;
-	ROS_INFO("connection_status_callback\r\n");
+
     // This sample DOES NOT take into consideration network outages.
     if (result == IOTHUB_CLIENT_CONNECTION_AUTHENTICATED)
     {
@@ -229,16 +227,13 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
                    RosIntrospection::Parser& parser,
                    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle)
 {
-    ROS_INFO("topicCallback\r\n");
     const std::string&  datatype   =  msg->getDataType();
     const std::string&  definition =  msg->getMessageDefinition();
 
-    // Don't worry if you do this more than once: already registered message are not overwritten.
     parser.registerMessageDefinition( topic_name,
                                       RosIntrospection::ROSType(datatype),
                                       definition );
 
-    // Reuse these opbects to improve efficiency ("static" makes them persistent)
     static std::vector<uint8_t> buffer;
     static std::map<std::string,FlatMessage>   flat_containers;
     static std::map<std::string,RenamedValues> renamed_vectors;
@@ -255,7 +250,6 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
     parser.deserializeIntoFlatContainer( topic_name, absl::Span<uint8_t>(buffer), &flat_container, 100);
     parser.applyNameTransform( topic_name, flat_container, &renamed_values );
 
-    // Print the content of the message
     ROS_INFO("--------- %s ----------\r\n", topic_name.c_str() );
     sendMsgToAzureIoTHub(topic_name.c_str(), deviceHandle);
     for (auto it: renamed_values)
@@ -431,7 +425,6 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
     json_value_free(root_value);
 }
 
-
 static bool InitializeAzureIoTHub(ROS_Azure_IoT_Hub* iotHub)
 {
     IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol = MQTT_Protocol;
@@ -472,8 +465,7 @@ static void DeinitializeAzureIoTHub(ROS_Azure_IoT_Hub* iotHub)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "universal_subscriber");
-
+    ros::init(argc, argv, "ros_azure_iothub");
     ROS_Azure_IoT_Hub iotHub;
 
     if (!InitializeAzureIoTHub(&iotHub))
