@@ -61,7 +61,7 @@ $ sudo apt-get update
 $ sudo apt-get install -y azure-iot-sdk-c-dev
 
 $ # build it and source install environment
-$ chmod a+x src/ros_azure_iothub/dynamic_tutorials/cfg/Tutorials.cfg
+$ chmod a+x src/ros_azure_iothub/dynamic_tutorials/cfg/tutorials.cfg
 $ catkin_make install
 $ source /install/setup.bash
 ```
