@@ -52,8 +52,6 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT receive_msg_callback(IOTHUB_MESSAGE_HAND
     const char* messageId;
     const char* correlationId;
 	
-	ROS_INFO("receive_msg_callback\r\n");
-
     // Message properties
     if ((messageId = IoTHubMessage_GetMessageId(message)) == NULL)
     {
@@ -73,11 +71,11 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT receive_msg_callback(IOTHUB_MESSAGE_HAND
 
         if (IoTHubMessage_GetByteArray(message, &buff_msg, &buff_len) != IOTHUB_MESSAGE_OK)
         {
-            ROS_ERROR("Failure retrieving byte array message\r\n");
+            ROS_ERROR("Failure retrieving byte array message");
         }
         else
         {
-            ROS_INFO("Received Binary message\r\n Message ID: %s\r\n Correlation ID: %s\r\n Data: <<<%.*s>>> & Size=%d\r\n", messageId, correlationId, (int)buff_len, buff_msg, (int)buff_len);
+            ROS_INFO("Received Binary message\r\n Message ID: %s\r\n Correlation ID: %s\r\n Data: <<<%.*s>>> & Size=%d", messageId, correlationId, (int)buff_len, buff_msg, (int)buff_len);
         }
     }
     else
@@ -85,11 +83,11 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT receive_msg_callback(IOTHUB_MESSAGE_HAND
         const char* string_msg = IoTHubMessage_GetString(message);
         if (string_msg == NULL)
         {
-            ROS_ERROR("Failure retrieving byte array message\r\n");
+            ROS_ERROR("Failure retrieving byte array message");
         }
         else
         {
-            ROS_INFO("Received String Message\r\n Message ID: %s\r\n Correlation ID: %s\r\n Data: <<<%s>>>\r\n", messageId, correlationId, string_msg);
+            ROS_INFO("Received String Message\r\n Message ID: %s\r\n Correlation ID: %s\r\n Data: <<<%s>>>", messageId, correlationId, string_msg);
         }
     }
     return IOTHUBMESSAGE_ACCEPTED;
@@ -105,9 +103,9 @@ static int device_method_callback(const char* method_name, const unsigned char* 
     int status = 501;
     const char* RESPONSE_STRING = "{ \"Response\": \"Unknown method requested.\" }";
 
-    ROS_INFO("\r\nDevice Method called for device %s\r\n", device_id);
-    ROS_INFO("Device Method name:    %s\r\n", method_name);
-    ROS_INFO("Device Method payload: %.*s\r\n", (int)size, (const char*)payload);
+    ROS_INFO("Device Method called for device %s", device_id);
+    ROS_INFO("Device Method name:    %s", method_name);
+    ROS_INFO("Device Method payload: %.*s", (int)size, (const char*)payload);
 
     if (strcmp(method_name, SetTelemetryIntervalMethod) == 0)
     {
@@ -131,8 +129,8 @@ static int device_method_callback(const char* method_name, const unsigned char* 
         }
     }
 
-    ROS_INFO("\r\nResponse status: %d\r\n", status);
-    ROS_INFO("Response payload: %s\r\n", RESPONSE_STRING);
+    ROS_INFO("Response status: %d", status);
+    ROS_INFO("Response payload: %s", RESPONSE_STRING);
 
     *resp_size = strlen(RESPONSE_STRING);
     *response = reinterpret_cast<unsigned char*>(malloc(*resp_size));
@@ -151,15 +149,15 @@ static void connection_status_callback(IOTHUB_CLIENT_CONNECTION_STATUS result, I
 {
     (void)reason;
     (void)user_context;
-	ROS_INFO("connection_status_callback\r\n");
+
     // This sample DOES NOT take into consideration network outages.
     if (result == IOTHUB_CLIENT_CONNECTION_AUTHENTICATED)
     {
-        ROS_INFO("The device client is connected to iothub\r\n");
+        ROS_INFO("The device client is connected to iothub");
     }
     else
     {
-        ROS_INFO("The device client has been disconnected\r\n");
+        ROS_INFO("The device client has been disconnected");
     }
 }
 
@@ -169,9 +167,9 @@ static void send_confirm_callback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void
     // When a message is sent this callback will get envoked
     g_message_count_send_confirmations++;
     #ifdef _WIN32
-    ROS_INFO("Confirmation callback received for message %lu with result %s\r\n", (unsigned long)g_message_count_send_confirmations, ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result));
+    ROS_INFO("Confirmation callback received for message %lu with result %s", (unsigned long)g_message_count_send_confirmations, ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result));
     #else
-    ROS_INFO("Confirmation callback received for message %lu with result %s\r\n", (unsigned long)g_message_count_send_confirmations, MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result));
+    ROS_INFO("Confirmation callback received for message %lu with result %s", (unsigned long)g_message_count_send_confirmations, MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result));
     #endif
 }
 
@@ -193,7 +191,7 @@ static bool IsTopicAvailableForSubscribe(const char* topicName)
     }
     if (!found )
     {
-        ROS_WARN("This topic has not been published yet: %s\r\n", topic_name.c_str());
+        ROS_WARN("This topic has not been published yet: %s", topic_name.c_str());
         return false;
     }
     return true;
@@ -213,10 +211,7 @@ void sendMsgToAzureIoTHub(const char* msg, IOTHUB_DEVICE_CLIENT_HANDLE deviceHan
     (void)IoTHubMessage_SetContentTypeSystemProperty(message_handle, "application%2fjson");
     (void)IoTHubMessage_SetContentEncodingSystemProperty(message_handle, "utf-8");
 
-    // Add custom properties to message 
-    //(void)IoTHubMessage_SetProperty(message_handle, "property_key", "property_value");
-
-    ROS_INFO("\r\nSending message %d to IoTHub\r\nMessage: %s\r\n", (int)(messagecount + 1), msg);
+    ROS_INFO("Sending message %d to IoTHub\r\nMessage: %s", (int)(messagecount + 1), msg);
     IoTHubDeviceClient_SendEventAsync(deviceHandle, message_handle, send_confirm_callback, NULL);
 
     // The message is copied to the sdk so the we can destroy it
@@ -229,16 +224,13 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
                    RosIntrospection::Parser& parser,
                    IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle)
 {
-    ROS_INFO("topicCallback\r\n");
     const std::string&  datatype   =  msg->getDataType();
     const std::string&  definition =  msg->getMessageDefinition();
 
-    // Don't worry if you do this more than once: already registered message are not overwritten.
     parser.registerMessageDefinition( topic_name,
                                       RosIntrospection::ROSType(datatype),
                                       definition );
 
-    // Reuse these opbects to improve efficiency ("static" makes them persistent)
     static std::vector<uint8_t> buffer;
     static std::map<std::string,FlatMessage>   flat_containers;
     static std::map<std::string,RenamedValues> renamed_vectors;
@@ -255,8 +247,7 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
     parser.deserializeIntoFlatContainer( topic_name, absl::Span<uint8_t>(buffer), &flat_container, 100);
     parser.applyNameTransform( topic_name, flat_container, &renamed_values );
 
-    // Print the content of the message
-    ROS_INFO("--------- %s ----------\r\n", topic_name.c_str() );
+    ROS_INFO("--------- %s ----------", topic_name.c_str() );
     sendMsgToAzureIoTHub(topic_name.c_str(), deviceHandle);
     for (auto it: renamed_values)
     {
@@ -264,7 +255,7 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
         const Variant& value   = it.second;
         char buffer [256] = {0};
         snprintf(buffer, sizeof(buffer), " %s = %f", key.c_str(), value.convert<double>());
-        ROS_INFO("%s\r\n",buffer);
+        ROS_INFO("%s",buffer);
         sendMsgToAzureIoTHub(buffer, deviceHandle);
     }
     for (auto it: flat_container.name)
@@ -273,7 +264,7 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
         const std::string& value  = it.second;
         char buffer [256] = {0};
         snprintf(buffer, sizeof(buffer), " %s = %s", key.c_str(), value.c_str());
-        ROS_INFO("%s\r\n",buffer);
+        ROS_INFO("%s",buffer);
         sendMsgToAzureIoTHub(buffer, deviceHandle);
     }
 }
@@ -307,15 +298,15 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
 
     for (size_t i = 0; i < objectCount; i++)
     {
-        ROS_INFO("  %s\r\n", json_object_get_name(arrayObject, i));
+        ROS_INFO("  %s", json_object_get_name(arrayObject, i));
         JSON_Value* value = json_object_get_value_at(arrayObject, i);
         const char* topicToSubscribe = json_value_get_string(value);
-        ROS_INFO("  %s\r\n", json_value_get_string(value));
+        ROS_INFO("  %s", json_value_get_string(value));
 
         // Only subscribe the topic that is avaiable but not subscribed before
         if (topicToSubscribe != NULL && IsTopicAvailableForSubscribe(topicToSubscribe) && std::find(iotHub->topicsToSubscribe.begin(), iotHub->topicsToSubscribe.end(), topicToSubscribe) == iotHub->topicsToSubscribe.end())
         {
-            ROS_INFO("Subscribe topic:  %s\r\n", topicToSubscribe);
+            ROS_INFO("Subscribe topic:  %s", topicToSubscribe);
             iotHub->topicsToSubscribe.push_back(topicToSubscribe);
             subscribeTopic(topicToSubscribe, iotHub);
         }
@@ -363,7 +354,7 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
 
             if (node != NULL && param != NULL && type != NULL && value != NULL)
             {
-                ROS_INFO("Trying to send dynamic configuration command - node:%s, parameter:%s, data type:%s, value:%s\r\n", node, param, type, value);
+                ROS_INFO("Trying to send dynamic configuration command - node:%s, parameter:%s, data type:%s, value:%s", node, param, type, value);
 
                 ReconfigureRequest srv_req;
                 ReconfigureResponse srv_resp;
@@ -404,7 +395,7 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
                     catch (const boost::bad_lexical_cast &e)
                     {
                         (void)e;
-                        ROS_ERROR("Failure converting %s to bool type\r\n", value);
+                        ROS_ERROR("Failure converting %s to bool type", value);
                     }
                 }
 
@@ -413,11 +404,11 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
                 snprintf(node_set_param, sizeof(node_set_param), "%s/set_parameters", node);
                 if (ros::service::call(node_set_param, srv_req, srv_resp))
                 {
-                    ROS_INFO("Succeed.\r\n");
+                    ROS_INFO("Succeed.");
                 }
                 else
                 {
-                    ROS_ERROR("Failure executing the dynamic configuration command.\r\n");
+                    ROS_ERROR("Failure executing the dynamic configuration command.");
                 }
             }
         }
@@ -437,18 +428,18 @@ static bool InitializeAzureIoTHub(ROS_Azure_IoT_Hub* iotHub)
     IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol = MQTT_Protocol;
 
     (void)IoTHub_Init();
-    ROS_INFO("Creating IoTHub Device handle\r\n");
+    ROS_INFO("Creating IoTHub Device handle");
 
     ros::NodeHandle nh("~");
     std::string connectionString;
     nh.getParam("connection_string", connectionString);
-    ROS_INFO("connection_string: %s\r\n", connectionString.c_str());
+    ROS_INFO("connection_string: %s", connectionString.c_str());
 
     // Create the iothub handle here
     iotHub->deviceHandle = IoTHubDeviceClient_CreateFromConnectionString(connectionString.c_str(), protocol);
     if (iotHub->deviceHandle == NULL)
     {
-        ROS_ERROR("Failure createing Iothub device.  Hint: Check you connection string.\r\n");
+        ROS_ERROR("Failure createing Iothub device.  Hint: Check you connection string.");
         return false;
     }
     // Setting message callback to get C2D messages
@@ -465,14 +456,14 @@ static bool InitializeAzureIoTHub(ROS_Azure_IoT_Hub* iotHub)
 
 static void DeinitializeAzureIoTHub(ROS_Azure_IoT_Hub* iotHub)
 {
-    ROS_INFO("Deinitializing IoTHub Device client\r\n");
+    ROS_INFO("Deinitializing IoTHub Device client");
     IoTHubDeviceClient_Destroy(iotHub->deviceHandle);
     IoTHub_Deinit();
 }
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "universal_subscriber");
+    ros::init(argc, argv, "ros_azure_iothub");
 
     ROS_Azure_IoT_Hub iotHub;
 
