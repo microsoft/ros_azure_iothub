@@ -43,7 +43,7 @@ struct ROS_Azure_IoT_Hub {
     Parser parser;
     ros::NodeHandle nh;
     std::vector<ros::Subscriber> subscribers;
-	std::vector<std::string> topicsToSubscribe;
+    std::vector<std::string> topicsToSubscribe;
 };
 
 static IOTHUBMESSAGE_DISPOSITION_RESULT receive_msg_callback(IOTHUB_MESSAGE_HANDLE message, void* user_context)
@@ -51,7 +51,6 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT receive_msg_callback(IOTHUB_MESSAGE_HAND
     (void)user_context;
     const char* messageId;
     const char* correlationId;
-	
     // Message properties
     if ((messageId = IoTHubMessage_GetMessageId(message)) == NULL)
     {
@@ -422,7 +421,6 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
     json_value_free(root_value);
 }
 
-
 static bool InitializeAzureIoTHub(ROS_Azure_IoT_Hub* iotHub)
 {
     IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol = MQTT_Protocol;
@@ -464,7 +462,6 @@ static void DeinitializeAzureIoTHub(ROS_Azure_IoT_Hub* iotHub)
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "ros_azure_iothub");
-
     ROS_Azure_IoT_Hub iotHub;
 
     if (!InitializeAzureIoTHub(&iotHub))
