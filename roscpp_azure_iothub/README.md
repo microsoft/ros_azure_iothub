@@ -122,7 +122,6 @@ Here is a JSON example to reconfigure the parameters of `/dynamic_tutorials_node
                         "type":  "double"
                         "value": "0.55",
                      },
-
                 "3": {
                         "node": "/dynamic_tutorials_node",
                         "param": "bool_param",

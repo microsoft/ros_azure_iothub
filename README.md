@@ -1,11 +1,11 @@
-# Samples for the Azure IoT Hub Relay for ROS
+# Samples for the Azure IoT Hub connector
 
-This folder contains the samples showing how to use the various features of Microsoft Azure IoT Hub service to relay telemetry messages or dynamic reconfiguration commands in the ROS node.
+These samples demostrate how to use the various features of Microsoft Azure IoT Hub service to relay telemetry messages or dynamic reconfiguration commands in ROS nodes.
 
 ## List of samples
 
-* [Relay sample in C++](./roscpp_azure_iothub/)
+* [IOT Hub connector sample in C++](./roscpp_azure_iothub/)
 
-* [Relay sample in python](./rospy_azure_iothub/)
+* [IOT Hub connector sample in Python](./rospy_azure_iothub/)
 
-* [Dynamic reconfiguration test sample](./dynamic_tutorials/)
+* [Dynamic reconfiguration sample](./dynamic_tutorials/)
