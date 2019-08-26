@@ -36,7 +36,6 @@ using namespace dynamic_reconfigure;
 
 int g_interval = 10000;  // 10 sec send interval initially, currently not used
 static size_t g_message_count_send_confirmations = 0;
-static bool g_is_startup = true;
 
 struct ROS_Azure_IoT_Hub {
     IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle;
@@ -311,110 +310,99 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
         }
     }
 
-    if (!g_is_startup)
+    // Get dynamic reconfiguration settings
+    arrayObject = json_object_dotget_object(ros_object, "ros_dynamic_configurations");
+    objectCount = json_object_get_count(arrayObject);
+
+    for (size_t i = 0; i < objectCount; i++)
     {
-        // Note: We ignore the existing ros_dynamic_configurations settings during ros_azure_iothub_cpp_node starts up.
-        // Reason: Suppose the other nodes are working with the expected dynamic configurations,
-        // and no need to update their configurations with the old values.
+        JSON_Value* congifure_value = json_object_get_value_at(arrayObject, i);
+        JSON_Object* congifure_object = json_value_get_object(congifure_value);
 
-        // Get dynamic reconfiguration settings
-        arrayObject = json_object_dotget_object(ros_object, "ros_dynamic_configurations");
-        objectCount = json_object_get_count(arrayObject);
-
-        for (size_t i = 0; i < objectCount; i++)
+        const char *node = NULL, *param = NULL, *type = NULL, *value = NULL;
+        JSON_Value* node_value = json_object_get_value(congifure_object, "node");
+        if (node_value != NULL)
         {
-            JSON_Value* congifure_value = json_object_get_value_at(arrayObject, i);
-            JSON_Object* congifure_object = json_value_get_object(congifure_value);
+            node = json_value_get_string(node_value);
+        }
 
-            const char *node = NULL, *param = NULL, *type = NULL, *value = NULL;
-            JSON_Value* node_value = json_object_get_value(congifure_object, "node");
-            if (node_value != NULL)
+        JSON_Value* param_value = json_object_get_value(congifure_object, "param");
+        if (param_value != NULL)
+        {
+            param = json_value_get_string(param_value);
+        }
+
+        JSON_Value* type_value = json_object_get_value(congifure_object, "type");
+        if (type_value != NULL)
+        {
+            type = json_value_get_string(type_value);
+        }
+
+        JSON_Value* val_value = json_object_get_value(congifure_object, "value");
+        if (val_value != NULL)
+        {
+            value = json_value_get_string(val_value);
+        }
+
+        if (node != NULL && param != NULL && type != NULL && value != NULL)
+        {
+            ROS_INFO("Trying to send dynamic configuration command - node:%s, parameter:%s, data type:%s, value:%s", node, param, type, value);
+
+            ReconfigureRequest srv_req;
+            ReconfigureResponse srv_resp;
+            Config conf;
+
+            if (strcmp(type, "string") == 0)
             {
-                node = json_value_get_string(node_value);
+                StrParameter string_param;
+                string_param.name = param;
+                string_param.value = value;
+                conf.strs.push_back(string_param);
+            }
+            else if (strcmp(type, "int") == 0)
+            {
+                char* end = NULL;
+                IntParameter int_param;
+                int_param.name = param;
+                int_param.value = (int)strtol(value, &end, 10);
+                conf.ints.push_back(int_param);
+            }
+            else if (strcmp(type, "double") == 0)
+            {
+                char* end = NULL;
+                DoubleParameter double_param;
+                double_param.name = param;
+                double_param.value = (double)strtod(value, &end);
+                conf.doubles.push_back(double_param);
+            }
+            else if (strcmp(type, "bool") == 0)
+            {
+                try
+                {
+                    BoolParameter bool_param;
+                    bool_param.name = param;
+                    bool_param.value = boost::lexical_cast<bool>(value);
+                    conf.bools.push_back(bool_param);
+                }
+                catch (const boost::bad_lexical_cast &e)
+                {
+                    (void)e;
+                    ROS_ERROR("Failure converting %s to bool type", value);
+                }
             }
 
-            JSON_Value* param_value = json_object_get_value(congifure_object, "param");
-            if (param_value != NULL)
+            srv_req.config = conf;
+            char node_set_param[256] = {0};
+            snprintf(node_set_param, sizeof(node_set_param), "%s/set_parameters", node);
+            if (ros::service::call(node_set_param, srv_req, srv_resp))
             {
-                param = json_value_get_string(param_value);
+                ROS_INFO("Succeed.");
             }
-
-            JSON_Value* type_value = json_object_get_value(congifure_object, "type");
-            if (type_value != NULL)
+            else
             {
-                type = json_value_get_string(type_value);
-            }
-
-            JSON_Value* val_value = json_object_get_value(congifure_object, "value");
-            if (val_value != NULL)
-            {
-                value = json_value_get_string(val_value);
-            }
-
-            if (node != NULL && param != NULL && type != NULL && value != NULL)
-            {
-                ROS_INFO("Trying to send dynamic configuration command - node:%s, parameter:%s, data type:%s, value:%s", node, param, type, value);
-
-                ReconfigureRequest srv_req;
-                ReconfigureResponse srv_resp;
-                Config conf;
-
-                if (strcmp(type, "string") == 0)
-                {
-                    StrParameter string_param;
-                    string_param.name = param;
-                    string_param.value = value;
-                    conf.strs.push_back(string_param);
-                }
-                else if (strcmp(type, "int") == 0)
-                {
-                    char* end = NULL;
-                    IntParameter int_param;
-                    int_param.name = param;
-                    int_param.value = (int)strtol(value, &end, 10);
-                    conf.ints.push_back(int_param);
-                }
-                else if (strcmp(type, "double") == 0)
-                {
-                    char* end = NULL;
-                    DoubleParameter double_param;
-                    double_param.name = param;
-                    double_param.value = (double)strtod(value, &end);
-                    conf.doubles.push_back(double_param);
-                }
-                else if (strcmp(type, "bool") == 0)
-                {
-                    try
-                    {
-                        BoolParameter bool_param;
-                        bool_param.name = param;
-                        bool_param.value = boost::lexical_cast<bool>(value);
-                        conf.bools.push_back(bool_param);
-                    }
-                    catch (const boost::bad_lexical_cast &e)
-                    {
-                        (void)e;
-                        ROS_ERROR("Failure converting %s to bool type", value);
-                    }
-                }
-
-                srv_req.config = conf;
-                char node_set_param[256] = {0};
-                snprintf(node_set_param, sizeof(node_set_param), "%s/set_parameters", node);
-                if (ros::service::call(node_set_param, srv_req, srv_resp))
-                {
-                    ROS_INFO("Succeed.");
-                }
-                else
-                {
-                    ROS_ERROR("Failure executing the dynamic configuration command.");
-                }
+                ROS_ERROR("Failure executing the dynamic configuration command.");
             }
         }
-    }
-    else
-    {
-        g_is_startup = false;
     }
 
     // Free resources
