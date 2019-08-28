@@ -1,0 +1,22 @@
+<launch>
+
+  <!-- Parameters for IOT hub connection  -->
+  <arg name="device_connection_string" default="HostName=sample.azure-devices.net;DeviceId=rosbot;SharedAccessKey=sampleKey" />
+  <arg name="iot_hub_connection_string" default="HostName=sample.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=sampleKey" />
+  <arg name="device_name" default="rosbot" />  
+
+  <!-- Launch Azure IOT hub connector -->
+  <node pkg="roscpp_azure_iothub" type="roscpp_azure_iothub_node" name="roscpp_azure_iothub_node" output="screen">
+    <param name="connection_string" value="$(arg device_connection_string)" />
+  </node>
+
+  <!-- Launch dynamic_tutorials test sample -->
+  <node pkg="dynamic_tutorials" type="dynamic_tutorials_node" name="dynamic_tutorials_node" output="screen"/>
+
+  <!-- Run test cases -->
+  <test test-name="roscpp_azure_iothub_testnode" pkg="roscpp_azure_iothub" type="roscpp_azure_iothub_testnode" name="roscpp_azure_iothub_testnode">
+    <param name="iot_hub_connection_string" value="$(arg iot_hub_connection_string)" />
+    <param name="device_name" value="$(arg device_name)" />
+  </test>
+
+</launch>

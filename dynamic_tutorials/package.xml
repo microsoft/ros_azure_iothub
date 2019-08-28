@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>dynamic_tutorials</name>
+  <version>1.0.0</version>
+  <description>This sample package demostrates how to set up up Dynamic Reconfigure for a ROS node.</description>
+  <maintainer email="baoxij@microsoft.com">Baoxi Jia</maintainer>
+  <license>MIT</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_export_depend>dynamic_reconfigure</build_export_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <exec_depend>dynamic_reconfigure</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+</package>

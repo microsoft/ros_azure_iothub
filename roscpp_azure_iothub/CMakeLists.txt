@@ -13,12 +13,14 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   topic_tools
   ros_type_introspection
+  dynamic_reconfigure
 )
 
 if (WIN32)
   find_package(azure_c_shared_utility REQUIRED)
   find_package(azure_iot_sdks REQUIRED)
   find_package(umqtt REQUIRED)
+  find_package(uamqp REQUIRED)  
 else (WIN32)
   set(IOTHUB_CLIENT_INCLUDES ".." "/usr/include/azureiot" "/usr/include/azureiot/inc" "./parson")
   add_library(parson STATIC
@@ -87,3 +89,15 @@ install(TARGETS ${PROJECT_NAME}_node
 install(DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
+
+#############
+##  Test   ##
+#############
+
+if(WIN32)
+  if(CATKIN_ENABLE_TESTING)
+    find_package(rostest REQUIRED)
+    add_rostest_gtest(${PROJECT_NAME}_testnode test/testiothub.launch test/testiothub.cpp)
+    target_link_libraries(${PROJECT_NAME}_testnode iothub_service_client ${catkin_LIBRARIES} )
+  endif()
+endif()
