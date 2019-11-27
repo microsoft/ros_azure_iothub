@@ -107,20 +107,20 @@ Here is a JSON example to reconfigure the parameters of `/dynamic_tutorials_node
                 "0": {
                         "node": "/dynamic_tutorials_node", 
                         "param": "str_param",
-                        "type":  "string"
-                        "value": "HelloWorld!",
+                        "type":  "string",
+                        "value": "HelloWorld!"
                 },
                 "1": {
                         "node": "/dynamic_tutorials_node",
                         "param": "int_param",
-                        "type":  "int"
-                        "value": "33",
+                        "type":  "int",
+                        "value": "33"
                      },
                 "2": {
                         "node": "/dynamic_tutorials_node",
                         "param": "double_param",
-                        "type":  "double"
-                        "value": "0.55",
+                        "type":  "double",
+                        "value": "0.55"
                      },
                 "3": {
                         "node": "/dynamic_tutorials_node",
