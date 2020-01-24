@@ -22,7 +22,7 @@ Here is an example how to build it for ROS on Windows.
 > :: checkout required ROS package sources
 > pushd src
 > git clone https://github.com/ms-iot/abseil-cpp -b init_windows
-> git clone https://github.com/ms-iot/ros_type_introspection -b init_windows
+> git clone https://github.com/facontidavide/ros_type_introspection
 > git clone --recursive https://github.com/Microsoft/ros_azure_iothub
 > popd
 
