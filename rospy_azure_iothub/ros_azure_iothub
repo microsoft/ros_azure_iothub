@@ -199,7 +199,7 @@ class IoTHubRelayNode(object):
                     elif relay_mode == "RELAY_MODE_TO_IOT_HUB":
                         relay_mode = RelayEntity.RELAY_MODE_TO_IOT_HUB
                     elif relay_mode == "RELAY_MODE_TO_ROS":
-                        relay_mode = RelayEntity.RELAY_MODE_TO_IOT_HUB
+                        relay_mode = RelayEntity.RELAY_MODE_TO_ROS
                     else:
                         rospy.logerr("Relay mode for topic '%s' specified as '%s', which is not a supported value." % (topic, value['relay_mode']))
                         continue
