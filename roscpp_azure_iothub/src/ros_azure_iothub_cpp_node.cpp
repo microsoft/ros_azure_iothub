@@ -242,7 +242,7 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
     msg->write(stream);
 
     // Deserialize and rename the vectors
-    parser.deserializeIntoFlatContainer( topic_name, absl::Span<uint8_t>(buffer), &flat_container, 100);
+    parser.deserializeIntoFlatContainer( topic_name, Span<uint8_t>(buffer), &flat_container, 100);
     parser.applyNameTransform( topic_name, flat_container, &renamed_values );
 
     ROS_INFO("--------- %s ----------", topic_name.c_str() );
