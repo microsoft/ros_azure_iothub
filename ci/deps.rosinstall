@@ -130,3 +130,11 @@
     local-name: interactive_markers
     uri: https://github.com/ms-iot/interactive_markers.git
     version: init_windows
+- git: 
+    local-name:ros_type_introspection
+    uri: https://github.com/facontidavide/ros_type_introspection.git
+    version: master
+- git:
+    local-name: abseil-cpp
+    uri: https://github.com/ms-iot/abseil-cpp.git
+    version: init_windows
