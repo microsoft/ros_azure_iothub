@@ -131,7 +131,7 @@
     uri: https://github.com/ms-iot/interactive_markers.git
     version: init_windows
 - git: 
-    local-name:ros_type_introspection
+    local-name: ros_type_introspection
     uri: https://github.com/facontidavide/ros_type_introspection.git
     version: master
 - git:
