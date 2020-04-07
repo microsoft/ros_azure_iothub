@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>ros_azure_iothub</id>
+    <version>1.0.0</version>
+    <title>ros_azure_iothub ROS package</title>
+    <authors>Microsoft Corp. </authors>
+    <licenseUrl>https://github.com/microsoft/ros_azure_iothub/License</licenseUrl>
+    <projectUrl>https://github.com/microsoft/ros_azure_iothub/</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>ros_azure_iothub for ROS on Windows.</description>
+    <summary>ros_azure_iothub packaged as a rosdep.</summary>
+    <tags>ros azure iothub</tags>
+    <packageSourceUrl>https://github.com/microsoft/ros_azure_iothub/package</packageSourceUrl>
+    <docsUrl>http://aka.ms/ros/docs</docsUrl>
+  </metadata>
+</package>
