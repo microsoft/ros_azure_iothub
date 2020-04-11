@@ -6,6 +6,12 @@ project(roscpp_azure_iothub)
 
 if(MSVC)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+  # WORKAROUND: ros_type_introspection/utils/variant.hpp(235): warning C4267: '=': conversion from 'size_t' to 'uint32_t', possible loss of data
+  add_compile_options(/wd4267)
+  # WORKAROUND: ros/message_event.h(217): warning C4127: conditional expression is constant
+  add_compile_options(/wd4127)
+  # WORKAROUND: parson/parson.c(62): warning C4232: nonstandard extension used: 'parson_malloc'
+  add_compile_options(/wd4232)
 endif()
 
 find_package(catkin REQUIRED COMPONENTS
@@ -16,18 +22,12 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
 )
 
-if (WIN32)
-  find_package(azure_c_shared_utility REQUIRED)
-  find_package(azure_iot_sdks REQUIRED)
-  find_package(umqtt REQUIRED)
-  find_package(uamqp REQUIRED)  
-else (WIN32)
-  set(IOTHUB_CLIENT_INCLUDES ".." "/usr/include/azureiot" "/usr/include/azureiot/inc" "./parson")
-  add_library(parson STATIC
-    parson/parson.c
-    parson/parson.h
-  )
-endif()
+find_package(azure_iot_sdks CONFIG REQUIRED)
+
+add_library(parson STATIC
+  parson/parson.c
+  parson/parson.h
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -50,29 +50,19 @@ add_executable(${PROJECT_NAME}_node src/ros_azure_iothub_cpp_node.cpp)
 
 link_directories(${catkin_LIBRARY_DIRS})
 
-if (WIN32)
+target_link_libraries(${PROJECT_NAME}_node
+  ${catkin_LIBRARIES}
+  parson
+)
+
+# prefer to use shared library.
+if (TARGET iothub_client_dll)
   target_link_libraries(${PROJECT_NAME}_node
-    ${catkin_LIBRARIES}
-    iothub_client
-    iothub_client_mqtt_ws_transport
+    $<TARGET_LINKER_FILE:iothub_client_dll>
   )
-else (WIN32)
+else()
   target_link_libraries(${PROJECT_NAME}_node
-    ${catkin_LIBRARIES}
     iothub_client
-    iothub_client_mqtt_transport
-    umqtt
-    aziotsharedutil
-    pthread
-    curl
-    ssl
-    crypto
-    m
-    uuid
-    parson
-    prov_auth_client
-    hsm_security_client
-    uhttp
   )
 endif()
 
