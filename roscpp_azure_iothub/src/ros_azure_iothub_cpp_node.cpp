@@ -6,11 +6,7 @@
 #include <stdio.h>
 
 // Azure IoT Hub
-#ifdef _WIN32
-#include <azure_c_shared_utility/macro_utils.h>
-#else
 #include <azure_macro_utils/macro_utils.h>
-#endif
 
 #include <azure_c_shared_utility/threadapi.h>
 #include <azure_c_shared_utility/platform.h>
@@ -164,11 +160,7 @@ static void send_confirm_callback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void
     (void)userContextCallback;
     // When a message is sent this callback will get envoked
     g_message_count_send_confirmations++;
-    #ifdef _WIN32
-    ROS_INFO("Confirmation callback received for message %lu with result %s", (unsigned long)g_message_count_send_confirmations, ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result));
-    #else
     ROS_INFO("Confirmation callback received for message %lu with result %s", (unsigned long)g_message_count_send_confirmations, MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result));
-    #endif
 }
 
 static bool IsTopicAvailableForSubscribe(const char* topicName)
@@ -238,7 +230,7 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
 
     // Copy raw memory into the buffer
     buffer.resize( msg->size() );
-    ros::serialization::OStream stream(buffer.data(), buffer.size());
+    ros::serialization::OStream stream(buffer.data(), (uint32_t)buffer.size());
     msg->write(stream);
 
     // Deserialize and rename the vectors
@@ -251,19 +243,19 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
     {
         const std::string& key = it.first;
         const Variant& value   = it.second;
-        char buffer [256] = {0};
-        snprintf(buffer, sizeof(buffer), " %s = %f", key.c_str(), value.convert<double>());
-        ROS_INFO("%s",buffer);
-        sendMsgToAzureIoTHub(buffer, deviceHandle);
+        char _buffer [256] = {0};
+        snprintf(_buffer, sizeof(_buffer), " %s = %f", key.c_str(), value.convert<double>());
+        ROS_INFO("%s",_buffer);
+        sendMsgToAzureIoTHub(_buffer, deviceHandle);
     }
     for (auto it: flat_container.name)
     {
         const std::string& key    = it.first.toStdString();
         const std::string& value  = it.second;
-        char buffer [256] = {0};
-        snprintf(buffer, sizeof(buffer), " %s = %s", key.c_str(), value.c_str());
-        ROS_INFO("%s",buffer);
-        sendMsgToAzureIoTHub(buffer, deviceHandle);
+        char _buffer [256] = {0};
+        snprintf(_buffer, sizeof(_buffer), " %s = %s", key.c_str(), value.c_str());
+        ROS_INFO("%s",_buffer);
+        sendMsgToAzureIoTHub(_buffer, deviceHandle);
     }
 }
 
