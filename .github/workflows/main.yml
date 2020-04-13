@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - melodic-devel
   schedule:
     # Run it regularly to detect flaky build breaks.
     - cron:  '0 0 */3 * *'
