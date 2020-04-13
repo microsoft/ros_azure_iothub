@@ -18,6 +18,8 @@ jobs:
           os: [windows-latest]
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: Cleanup windows environment
       shell: bash
       run: |
