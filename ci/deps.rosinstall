@@ -138,3 +138,7 @@
     local-name: abseil-cpp
     uri: https://github.com/ms-iot/abseil-cpp.git
     version: init_windows
+- git:
+    local-name: dynamic_reconfigure
+    uri: https://github.com/ros/dynamic_reconfigure
+    version: melodic-devel
