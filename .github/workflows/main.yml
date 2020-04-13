@@ -41,7 +41,7 @@ jobs:
         ROS_PYTHON_VERSION: 3
         CC: cl.exe
         CXX: cl.exe
-    - uses: ros-tooling/action-ros-ci@master
+    - uses: seanyen/action-ros-ci@seanyen/recursive
       with:
         package-name: roscpp_azure_iothub
         vcs-repo-file-url: ${{ github.workspace }}/ci/empty.rosinstall
