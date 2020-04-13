@@ -15,3 +15,4 @@ dependencies:
   - lz4-c
   - opencv=3
   - eigen
+  - azure-iot-sdk-c
