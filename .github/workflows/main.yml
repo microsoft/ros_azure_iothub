@@ -31,7 +31,7 @@ jobs:
         activate-environment: myenv
         environment-file: ci/environment.yaml
         python-version: 3.7
-    - uses: seanyen/action-ros-ci@seanyen/recursive
+    - uses: ros-tooling/action-ros-ci@master
       with:
         package-name: roscpp_azure_iothub
         vcs-repo-file-url: ${{ github.workspace }}/ci/deps.rosinstall
@@ -41,7 +41,7 @@ jobs:
         ROS_PYTHON_VERSION: 3
         CC: cl.exe
         CXX: cl.exe
-    - uses: seanyen/action-ros-ci@seanyen/recursive
+    - uses: ros-tooling/action-ros-ci@master
       with:
         package-name: roscpp_azure_iothub
         vcs-repo-file-url: ${{ github.workspace }}/ci/empty.rosinstall
