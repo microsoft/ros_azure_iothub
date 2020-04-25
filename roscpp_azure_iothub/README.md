@@ -10,29 +10,27 @@ To run this sample, you will need:
 
 # How to Build (ROS on Windows)
 Here is an example how to build it for ROS on Windows.
-```
-> :: source ROS environment
-> c:\opt\ros\melodic\x64\setup.bat
+```Batchfile
+:: source ROS environment
+c:\opt\ros\melodic\x64\setup.bat
 
-> :: create catkin workspace folders
-> mkdir catkin_ws\src
-> pushd catkin_ws
-> catkin_init_workspace src
+:: create catkin workspace folders
+mkdir catkin_ws\src
+pushd catkin_ws
 
-> :: checkout required ROS package sources
-> pushd src
-> git clone https://github.com/ms-iot/abseil-cpp -b init_windows
-> git clone https://github.com/facontidavide/ros_type_introspection
-> git clone --recursive https://github.com/Microsoft/ros_azure_iothub
-> popd
+:: checkout required ROS package sources
+pushd src
+git clone https://github.com/facontidavide/ros_type_introspection
+git clone --recursive https://github.com/Microsoft/ros_azure_iothub
+popd
 
-> :: install system dependencies
-> rosdep update
-> rosdep install --from-paths src --ignore-src -r -y
+:: install system dependencies
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y
 
-> :: build it and source install environment
-> catkin_make install
-> install\setup.bat
+:: build it and source install environment
+catkin_make_isolated --only-pkg-with-deps roscpp_azure_iothub --install
+install_isolated\setup.bat
 ```
 
 # How to Build (Ubuntu Linux Melodic install)
