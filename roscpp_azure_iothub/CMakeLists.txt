@@ -61,6 +61,9 @@ if (TARGET iothub_client_dll)
     $<TARGET_LINKER_FILE:iothub_client_dll>
   )
 else()
+  target_link_directories(${PROJECT_NAME}_node
+    PRIVATE $<TARGET_LINKER_FILE_DIR:iothub_client>
+  )
   target_link_libraries(${PROJECT_NAME}_node
     iothub_client
   )
