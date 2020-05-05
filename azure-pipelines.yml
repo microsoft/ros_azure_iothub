@@ -1,0 +1,11 @@
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: ms-iot/rosonwindows_ci
+      endpoint: ooeygui
+
+jobs:
+- template: build.yml@templates  # Template reference
+  parameters:
+    ros_metapackage: 'ros-melodic-desktop'
