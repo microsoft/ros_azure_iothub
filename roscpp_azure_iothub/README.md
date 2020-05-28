@@ -98,7 +98,7 @@ Similar as the telemetry reporting, we are using the device twin `desired` prope
 
 Here is a JSON example to reconfigure the parameters of `/dynamic_tutorials_node` with the new value:
 
-``` json
+```json
 {
     "deviceId": "devA",
     "properties": {
@@ -132,6 +132,7 @@ Here is a JSON example to reconfigure the parameters of `/dynamic_tutorials_node
     }
 }
 ```
+
 Currently 4 types of parameters can be dynamically reconfigured, they are "string", "int", "double" and "bool".
 
 # Deployment (Client side)
