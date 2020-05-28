@@ -22,7 +22,11 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
 )
 
+if (WIN32)
 find_package(azure_iot_sdks CONFIG REQUIRED)
+else (WIN32)
+  set(IOTHUB_CLIENT_INCLUDES ".." "/usr/include/azureiot" "/usr/include/azureiot/inc" "./parson")
+endif()
 
 add_library(parson STATIC
   parson/parson.c
@@ -66,7 +70,19 @@ else()
   )
   target_link_libraries(${PROJECT_NAME}_node
     iothub_client
-  )
+    iothub_client_mqtt_transport
+    umqtt
+    aziotsharedutil
+    pthread
+    curl
+    ssl
+    crypto
+    m
+    uuid
+    parson
+    prov_auth_client
+    hsm_security_client
+    uhttp  )
 endif()
 
 #############
