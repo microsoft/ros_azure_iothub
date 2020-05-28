@@ -24,16 +24,19 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(azure_iot_sdks CONFIG)
 
-if(NOT azure_iot_sdks_FOUND AND EXISTS "/usr/include/azureiot")
+if(azure_iot_sdks_FOUND)
+  message(STATUS "azure-iot-sdk-c is found")
+elseif(EXISTS "/usr/include/azureiot")
   set(IOTHUB_CLIENT_INCLUDES "/usr/include/azureiot" "/usr/include/azureiot/inc" "parson")
-else()
-  message(FATAL_ERROR "Cannot locate azure-iot-sdk-c")
-endif()
 
 add_library(parson STATIC
   parson/parson.c
   parson/parson.h
 )
+
+else()
+  message(FATAL_ERROR "Cannot locate azure-iot-sdk-c. Please ensure that dependency has been installed and the CMAKE_PREFIX_PATH contains the path to azure_iot_sdksConfig.cmake")
+endif()
 
 ###################################
 ## catkin specific configuration ##
