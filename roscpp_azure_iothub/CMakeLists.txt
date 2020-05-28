@@ -22,10 +22,12 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
 )
 
-if (WIN32)
-find_package(azure_iot_sdks CONFIG REQUIRED)
-else (WIN32)
-  set(IOTHUB_CLIENT_INCLUDES ".." "/usr/include/azureiot" "/usr/include/azureiot/inc" "./parson")
+find_package(azure_iot_sdks CONFIG)
+
+if(NOT azure_iot_sdks_FOUND AND EXISTS "/usr/include/azureiot")
+  set(IOTHUB_CLIENT_INCLUDES "/usr/include/azureiot" "/usr/include/azureiot/inc" "parson")
+else()
+  message(FATAL_ERROR "Cannot locate azure-iot-sdk-c")
 endif()
 
 add_library(parson STATIC
@@ -64,10 +66,14 @@ if (TARGET iothub_client_dll)
   target_link_libraries(${PROJECT_NAME}_node
     $<TARGET_LINKER_FILE:iothub_client_dll>
   )
-else()
+elseif(TARGET iothub_client)
   target_link_directories(${PROJECT_NAME}_node
     PRIVATE $<TARGET_LINKER_FILE_DIR:iothub_client>
   )
+  target_link_libraries(${PROJECT_NAME}_node
+    iothub_client
+  )
+else()
   target_link_libraries(${PROJECT_NAME}_node
     iothub_client
     iothub_client_mqtt_transport

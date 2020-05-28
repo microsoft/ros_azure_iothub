@@ -42,7 +42,7 @@ Here is an example how to build it for Ubuntu Linux Melodic install.
 source /opt/ros/melodic/setup.bash
 
 # create catkin workspace folders
-mkdir catkin_ws\src -p
+mkdir catkin_ws/src -p
 pushd catkin_ws
 catkin_init_workspace src
 
@@ -51,14 +51,16 @@ pushd src
 git clone --recursive https://github.com/Microsoft/ros_azure_iothub
 popd
 
-# install system dependencies
-sudo rosdep update
-sudo rosdep install --from-paths src --ignore-src -r -y
-
 # install Azure IoT SDK as Debian
 sudo add-apt-repository ppa:aziotsdklinux/ppa-azureiot
-sudo apt-get update
-sudo apt-get install -y azure-iot-sdk-c-dev
+
+# update apt to refresh package registries
+sudo apt update
+sudo apt install -y azure-iot-sdk-c-dev
+
+# install system dependencies
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y
 
 # build it and source install environment
 chmod a+x src/ros_azure_iothub/dynamic_tutorials/cfg/tutorials.cfg
