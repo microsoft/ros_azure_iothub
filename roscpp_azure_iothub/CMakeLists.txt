@@ -22,7 +22,35 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
 )
 
-find_package(azure_iot_sdks CONFIG REQUIRED)
+if(EXISTS "C:/opt/rosdeps/x64/include/azureiot")
+  message(STATUS " ******************************")
+  message(STATUS " *** Pardon the interuption ***")
+  message(STATUS " ******************************")
+  message(STATUS "This package has been migrated to use the LTS release of IoT Hub contained in the Vcpkg library manager.")
+  message(STATUS "A deprecated install has been detected on this system, which conflicts with the LTS release.")
+  message(STATUS "In order to build this package, please perform these one time steps to remove the conflicting install:")
+  message(STATUS "del c:\\opt\\rosdeps\\x64\\CMake\\azure_iot*.cmake")
+  message(STATUS "del c:\\opt\\rosdeps\\x64\\CMake\\azure_c_shared*.cmake")
+  message(STATUS "del c:\\opt\\rosdeps\\x64\\CMake\\uamqp*.cmake")
+  message(STATUS "del c:\\opt\\rosdeps\\x64\\CMake\\umqtt*.cmake")
+  message(STATUS "del c:\\opt\\rosdeps\\x64\\CMake\\utpm*.cmake")
+  message(STATUS "rd /s c:\\opt\\rosdeps\\x64\\include\\azureiot")
+  message(STATUS "rosdep update")
+  message(STATUS "rosdep install --from-paths src --ignore-src -r -y")
+
+  message(FATAL_ERROR "Once you've completed these one time migration steps, please rebuild. Thank you. ")
+
+endif()
+
+find_package(azure_iot_sdks CONFIG)
+
+if(azure_iot_sdks_FOUND)
+  message(STATUS "azure-iot-sdk-c is found - ${IOTHUB_CLIENT_INCLUDES}")
+elseif(EXISTS "/usr/include/azureiot")
+  set(IOTHUB_CLIENT_INCLUDES "/usr/include/azureiot" "/usr/include/azureiot/inc" "parson")
+else()
+  message(FATAL_ERROR "Cannot locate azure-iot-sdk-c. Please ensure that dependency has been installed and the CMAKE_PREFIX_PATH contains the path to azure_iot_sdksConfig.cmake")
+endif()
 
 add_library(parson STATIC
   parson/parson.c
@@ -57,16 +85,37 @@ target_link_libraries(${PROJECT_NAME}_node
 
 # prefer to use shared library.
 if (TARGET iothub_client_dll)
+  message(STATUS "using iothub_client_dll")
+
   target_link_libraries(${PROJECT_NAME}_node
     $<TARGET_LINKER_FILE:iothub_client_dll>
   )
-else()
+elseif(TARGET iothub_client)
+  message(STATUS "using iothub_client static")
+
   target_link_directories(${PROJECT_NAME}_node
     PRIVATE $<TARGET_LINKER_FILE_DIR:iothub_client>
   )
   target_link_libraries(${PROJECT_NAME}_node
     iothub_client
   )
+else()
+  message(STATUS "using iot libs")
+  target_link_libraries(${PROJECT_NAME}_node
+    iothub_client
+    iothub_client_mqtt_transport
+    umqtt
+    aziotsharedutil
+    pthread
+    curl
+    ssl
+    crypto
+    m
+    uuid
+    parson
+    prov_auth_client
+    hsm_security_client
+    uhttp  )
 endif()
 
 #############

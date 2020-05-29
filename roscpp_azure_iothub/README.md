@@ -1,7 +1,7 @@
-# Azure IoT Hub Relay for ROS (roscpp version)
+# Azure IoT Hub Relay for ROS
 
 # Prerequisites
-To run this sample, you will need:
+To use this ROS node on your Robot, you will need:
   * Azure IoT Hub service and at least one device registered under IoT Hub.
     * See more on [Quickstart: Send telemetry from a device to an IoT hub and read the telemetry from the hub with a back-end application](https://docs.microsoft.com/en-us/azure/iot-hub/quickstart-send-telemetry-c).
   * ROS installation.
@@ -20,6 +20,7 @@ pushd catkin_ws
 
 :: checkout required ROS package sources
 pushd src
+git clone https://github.com/ms-iot/abseil-cpp -b init_windows
 git clone https://github.com/facontidavide/ros_type_introspection
 git clone --recursive https://github.com/Microsoft/ros_azure_iothub
 popd
@@ -35,58 +36,59 @@ install_isolated\setup.bat
 
 # How to Build (Ubuntu Linux Melodic install)
 Here is an example how to build it for Ubuntu Linux Melodic install.
-```
-$ # source ROS environment
-$ source /opt/ros/melodic/setup.bash
 
-$ # create catkin workspace folders
-$ mkdir catkin_ws\src -p
-$ pushd catkin_ws
-$ catkin_init_workspace src
+``` bash
+# source ROS environment
+source /opt/ros/melodic/setup.bash
 
-$ # checkout required ROS package sources
-$ pushd src
-$ git clone --recursive https://github.com/Microsoft/ros_azure_iothub
-$ popd
+# create catkin workspace folders
+mkdir catkin_ws/src -p
+pushd catkin_ws
+catkin_init_workspace src
 
-$ # install system dependencies
-$ sudo rosdep update
-$ sudo rosdep install --from-paths src --ignore-src -r -y
+# checkout required ROS package sources
+pushd src
+git clone --recursive https://github.com/Microsoft/ros_azure_iothub
+popd
 
-$ # install Azure IoT SDK as Debian
-$ sudo add-apt-repository ppa:aziotsdklinux/ppa-azureiot
-$ sudo apt-get update
-$ sudo apt-get install -y azure-iot-sdk-c-dev
+# install Azure IoT SDK as Debian
+sudo add-apt-repository ppa:aziotsdklinux/ppa-azureiot
 
-$ # build it and source install environment
-$ chmod a+x src/ros_azure_iothub/dynamic_tutorials/cfg/tutorials.cfg
-$ catkin_make install
-$ source /install/setup.bash
+# update apt to refresh package registries
+sudo apt update
+sudo apt install -y azure-iot-sdk-c-dev
+
+# install system dependencies
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y
+
+# build it and source install environment
+chmod a+x src/ros_azure_iothub/dynamic_tutorials/cfg/tutorials.cfg
+catkin_make install
+source /install/setup.bash
 ```
 
 # Deployment (IoT Hub for telemetry reporting)
 Device twins are JSON documents that store device state information including metadata, configurations, and conditions. Azure IoT Hub maintains a device twin for each device that you connect to IoT Hub. And we are using `desired` properties as a channel to ask our ROS node what ROS topics to report.
 
 Here is a JSON example to report `/rosout`:
-```
+
+``` json
 {
     "deviceId": "devA",
-    ...
     "properties": {
         "desired": {
             "ros_relays": {
                 "1": "/rosout"
-            },
-            ...
-        },
-        ...
+            }
+        }
     }
 }
 ```
 
 And add the `ros_relays` block to the device twin which you are about to connect in the next step. Meanwhile, you can run the following Azure PowerShell cmdlet to wait for events from IoT Hub.
 
-```
+``` bash
 az iot hub monitor-events --hub-name <YourIoTHubName> --output table
 ```
 
@@ -95,10 +97,10 @@ az iot hub monitor-events --hub-name <YourIoTHubName> --output table
 Similar as the telemetry reporting, we are using the device twin `desired` properties as a channel to ask our ROS node what dynamic parameters to reconfigure.
 
 Here is a JSON example to reconfigure the parameters of `/dynamic_tutorials_node` with the new value:
-```
+
+```json
 {
     "deviceId": "devA",
-    ...
     "properties": {
         "desired": {
             "ros_dynamic_configurations": {
@@ -126,17 +128,17 @@ Here is a JSON example to reconfigure the parameters of `/dynamic_tutorials_node
                         "type":  "bool",
                         "value": "1"
                      }
-            ...
-        },
-        ...
+        }
     }
 }
 ```
+
 Currently 4 types of parameters can be dynamically reconfigured, they are "string", "int", "double" and "bool".
 
 # Deployment (Client side)
 This node can be run using `roslaunch` (replacing the value for `connection_string` with the value given by Azure IoT Hub):
-```
+
+``` bash
 roslaunch roscpp_azure_iothub sample.launch connection_string:="HostName=sample.azure-devices.net;DeviceId=rosbot;SharedAccessKey=sampleKey"
 ```
 
