@@ -5,7 +5,47 @@ resources:
       name: ms-iot/rosonwindows_ci
       endpoint: microsoft
 
+pr:
+  branches:
+    include:
+      - melodic-devel
+
+schedules:
+  - cron: "0 0 * * *" # Daily midnight build
+    branches:
+      include:
+        - melodic-devel
+
 jobs:
 - template: build.yml@templates  # Template reference
   parameters:
-    ros_metapackage: 'ros-melodic-desktop'
+    rosdistro: melodic
+    metapackage: desktop
+    platforms:
+      - linux
+      - windows
+    pre_build:
+      - script: |
+          pushd src
+          git clone https://github.com/facontidavide/ros_type_introspection
+        displayName: Checkout ros_type_introspection (Windows)
+        condition: eq(variables['Agent.OS'], 'Windows_NT')
+        workingDirectory: '$(Build.StagingDirectory)'
+      - script: |
+          pushd c:\opt\vcpkg
+          git fetch
+          git checkout master
+          git pull
+          call bootstrap-vcpkg.bat
+          vcpkg.exe upgrade --no-dry-run
+        displayName: Install Latest Azure IoT C SDK (Windows)
+        condition: eq(variables['Agent.OS'], 'Windows_NT')
+        workingDirectory: '$(Build.StagingDirectory)'
+      - script: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository ppa:aziotsdklinux/ppa-azureiot
+          sudo apt update
+          sudo apt install -y azure-iot-sdk-c-dev
+        displayName: Install Azure IoT C SDK (Linux)
+        condition: eq(variables['Agent.OS'], 'Linux')
