@@ -1,6 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -10,6 +13,7 @@
 
 #include <azure_c_shared_utility/threadapi.h>
 #include <azure_c_shared_utility/platform.h>
+#include <azure_c_shared_utility/shared_util_options.h>
 #include <iothub_device_client.h>
 #include <iothub_client_options.h>
 #include <iothub.h>
@@ -31,6 +35,7 @@ using namespace RosIntrospection;
 using namespace dynamic_reconfigure;
 
 int g_interval = 10000;  // 10 sec send interval initially, currently not used
+std::string g_authentication_x509 = "x509";
 static size_t g_message_count_send_confirmations = 0;
 
 struct ROS_Azure_IoT_Hub {
@@ -401,6 +406,66 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
     json_value_free(root_value);
 }
 
+static bool ReadKeyFromFile(const std::string fileName, std::string &key)
+{
+    //key = NULL;
+    if (fileName.empty())
+    {
+        ROS_ERROR("File name empty.");
+        return false;
+    }
+
+    std::ifstream f(fileName); //taking file as inputstream
+    if(f) {
+        std::ostringstream ss;
+        ss << f.rdbuf(); // reading data
+        key = ss.str();
+    }
+    else
+    {
+        ROS_ERROR("Could not read from file.");
+        return false;
+    }
+
+    ROS_INFO("File Read: %s", fileName.c_str());
+    return true;
+}
+
+static bool InitializeX509Certificate(IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle, ros::NodeHandle nh)
+{
+    std::string x509certificateFile;
+    std::string x509certificate;
+    nh.getParam("public_key_file", x509certificateFile);
+    ROS_INFO("public_key_file: %s", x509certificateFile.c_str());
+    if (!ReadKeyFromFile(x509certificateFile, x509certificate))
+    {
+        ROS_ERROR("Could not read x509 certificate/public key file, aborting.");
+        return false;
+    }
+
+    std::string x509privatekeyFile;
+    std::string x509privatekey;
+    nh.getParam("private_key_file", x509privatekeyFile);
+    if (!ReadKeyFromFile(x509privatekeyFile, x509privatekey))
+    {
+        ROS_ERROR("Could not read x509 private key file, aborting.");
+        return false;
+    }
+
+    // Set the X509 certificates in the SDK
+    if (
+        (IoTHubDeviceClient_SetOption(deviceHandle, OPTION_X509_CERT, x509certificate.c_str()) != IOTHUB_CLIENT_OK) ||
+        (IoTHubDeviceClient_SetOption(deviceHandle, OPTION_X509_PRIVATE_KEY, x509privatekey.c_str()) != IOTHUB_CLIENT_OK)
+        )
+    {
+        ROS_ERROR("failure to set options for x509, aborting\r\n");
+        return false;
+    }
+    ROS_INFO("x509 certificate Succeeded.");
+
+    return true;
+}
+
 static bool InitializeAzureIoTHub(ROS_Azure_IoT_Hub* iotHub)
 {
     IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol = MQTT_Protocol;
@@ -413,6 +478,10 @@ static bool InitializeAzureIoTHub(ROS_Azure_IoT_Hub* iotHub)
     nh.getParam("connection_string", connectionString);
     ROS_INFO("connection_string: %s", connectionString.c_str());
 
+    std::string authenticationType;
+    nh.getParam("authentication_type", authenticationType);
+    ROS_INFO("authentication_type: %s", authenticationType.c_str());
+
     // Create the iothub handle here
     iotHub->deviceHandle = IoTHubDeviceClient_CreateFromConnectionString(connectionString.c_str(), protocol);
     if (iotHub->deviceHandle == NULL)
@@ -420,6 +489,18 @@ static bool InitializeAzureIoTHub(ROS_Azure_IoT_Hub* iotHub)
         ROS_ERROR("Failure createing Iothub device.  Hint: Check you connection string.");
         return false;
     }
+
+    // Check if a x509 certificate should be used for authentication. If not,
+    // a sharedAccessKey is expected in the connection string.
+    if (authenticationType == g_authentication_x509)
+    {
+        if(!InitializeX509Certificate(iotHub->deviceHandle, nh))
+        {
+            ROS_ERROR("Failed to initialize x509 certificate.");
+            return false;
+        }
+    }
+
     // Setting message callback to get C2D messages
     (void)IoTHubDeviceClient_SetMessageCallback(iotHub->deviceHandle, receive_msg_callback, NULL);
     // Setting method callback to handle a SetTelemetryInterval method to control
