@@ -146,7 +146,7 @@ This value can also be set in the ROS Parameter Server at `/roscpp_azure_iothub_
 
 Now you can run some other ROS scenarios and see the `/rosout` being reported back to IoT Hub or the node parameters being dynamically reconfigured.
 
-# X.509 Certificate Authentication
+# X.509 Certificate Authentication
 
 By default, the ROS node will use SAS (Shared Access Signatures) to communicate with IoT Hub. Follow the instructions below to use X.509 certificates instead.
 
@@ -160,7 +160,7 @@ set DEVICE_PRIVATE_KEY="C:/myCertPath/myDevice-private.pem"
 set DEVICE_PUBLIC_KEY="C:/myCertPath/myDevice-public.pem"
 ```
 
-To deploy, run the following. (replacing the value for `connection_string` with the value given by Azure IoT Hub)
+To deploy, run the following. (replacing the value for `connection_string` with the value given by Azure IoT Hub)
 ```
 ::Launch the node using the X.509 sample launch file
 roslaunch roscpp_azure_iothub sample_x509.launch  connection_string:="HostName=
