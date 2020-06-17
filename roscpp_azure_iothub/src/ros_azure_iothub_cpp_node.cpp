@@ -35,7 +35,9 @@ using namespace RosIntrospection;
 using namespace dynamic_reconfigure;
 
 int g_interval = 10000;  // 10 sec send interval initially, currently not used
-std::string g_authentication_x509 = "x509";
+const std::string g_authentication_SAS = "SAS";
+const std::string g_authentication_x509 = "x509";
+
 static size_t g_message_count_send_confirmations = 0;
 
 struct ROS_Azure_IoT_Hub {
@@ -408,7 +410,7 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
 
 static bool ReadKeyFromFile(const std::string fileName, std::string &key)
 {
-    //key = NULL;
+    key = "";
     if (fileName.empty())
     {
         ROS_ERROR("File name empty.");
@@ -416,10 +418,18 @@ static bool ReadKeyFromFile(const std::string fileName, std::string &key)
     }
 
     std::ifstream f(fileName); //taking file as inputstream
-    if(f) {
-        std::ostringstream ss;
-        ss << f.rdbuf(); // reading data
-        key = ss.str();
+    if(f)
+    {
+        try
+        {
+            std::ostringstream ss;
+            ss << f.rdbuf(); // reading data
+            key = ss.str();
+        }
+        catch(const std::exception& e)
+        {
+            ROS_ERROR("Exception thrown during file read: %s", e.what());
+        }
     }
     else
     {
@@ -453,14 +463,21 @@ static bool InitializeX509Certificate(IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle, 
     }
 
     // Set the X509 certificates in the SDK
-    if (
-        (IoTHubDeviceClient_SetOption(deviceHandle, OPTION_X509_CERT, x509certificate.c_str()) != IOTHUB_CLIENT_OK) ||
-        (IoTHubDeviceClient_SetOption(deviceHandle, OPTION_X509_PRIVATE_KEY, x509privatekey.c_str()) != IOTHUB_CLIENT_OK)
-        )
+    IOTHUB_CLIENT_RESULT status;
+    status = IoTHubDeviceClient_SetOption(deviceHandle, OPTION_X509_CERT, x509certificate.c_str());
+    if (status != IOTHUB_CLIENT_OK)
     {
-        ROS_ERROR("failure to set options for x509, aborting\r\n");
+        ROS_ERROR("Failed to set option for x509 certificate: %s", IOTHUB_CLIENT_RESULTStrings(status));
         return false;
     }
+
+    status = IoTHubDeviceClient_SetOption(deviceHandle, OPTION_X509_PRIVATE_KEY, x509privatekey.c_str());
+    if (status != IOTHUB_CLIENT_OK)
+    {
+        ROS_ERROR("Failed to set option for x509 private key: %s", IOTHUB_CLIENT_RESULTStrings(status));
+        return false;
+    }
+
     ROS_INFO("x509 certificate Succeeded.");
 
     return true;
@@ -492,13 +509,23 @@ static bool InitializeAzureIoTHub(ROS_Azure_IoT_Hub* iotHub)
 
     // Check if a x509 certificate should be used for authentication. If not,
     // a sharedAccessKey is expected in the connection string.
-    if (authenticationType == g_authentication_x509)
+    if (authenticationType == g_authentication_SAS || authenticationType == "")
     {
+        ROS_INFO("Using Shared Access Signatures authentication.");
+    }
+    else if (authenticationType == g_authentication_x509)
+    {
+        ROS_INFO("Using x.509 Certificate authentication.");
         if(!InitializeX509Certificate(iotHub->deviceHandle, nh))
         {
             ROS_ERROR("Failed to initialize x509 certificate.");
             return false;
         }
+    }
+    else
+    {
+        ROS_ERROR("Invalid authentication type: %s", authenticationType.c_str());
+        return false;
     }
 
     // Setting message callback to get C2D messages
