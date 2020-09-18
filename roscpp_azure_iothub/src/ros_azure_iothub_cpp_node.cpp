@@ -46,6 +46,8 @@ struct ROS_Azure_IoT_Hub {
     ros::NodeHandle nh;
     std::vector<ros::Subscriber> subscribers;
     std::vector<std::string> topicsToSubscribe;
+    std::vector<std::string> topicsToReport;
+    char* reportedProperties;
 };
 
 static IOTHUBMESSAGE_DISPOSITION_RESULT receive_msg_callback(IOTHUB_MESSAGE_HANDLE message, void* user_context)
@@ -216,10 +218,38 @@ void sendMsgToAzureIoTHub(const char* msg, IOTHUB_DEVICE_CLIENT_HANDLE deviceHan
     messagecount++;
 }
 
+// Message serialization for sending topic messages via reported properties 
+static char* serializeToJson(std::string topic, std::string message)
+{
+    char* result = NULL;
+
+    JSON_Value* root_value = json_value_init_object();
+    JSON_Object* root_object = json_value_get_object(root_value);
+
+    std::string topic_header = "ros_messages." + topic;
+    std::string msg = "[\"" + message + "\"]";
+    (void)json_object_dotset_value(root_object, topic_header.c_str(), json_parse_string(msg.c_str()));
+
+    result = json_serialize_to_string_pretty(root_value);
+
+    json_value_free(root_value);
+
+    return result;
+}
+
+static void reportedStateCallback(int status_code, void* userContextCallback)
+{
+    (void)userContextCallback;
+    printf("Device Twin reported properties update completed with result: %d\r\n", status_code);
+}
+
+
 void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
                    const std::string &topic_name,
                    RosIntrospection::Parser& parser,
-                   IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle)
+                   IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle, 
+                   std::vector<std::string> topicsToReport,
+                   char* reportedProperties)
 {
     const std::string&  datatype   =  msg->getDataType();
     const std::string&  definition =  msg->getMessageDefinition();
@@ -244,25 +274,42 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
     parser.deserializeIntoFlatContainer( topic_name, Span<uint8_t>(buffer), &flat_container, 100);
     parser.applyNameTransform( topic_name, flat_container, &renamed_values );
 
-    ROS_INFO("--------- %s ----------", topic_name.c_str() );
-    sendMsgToAzureIoTHub(topic_name.c_str(), deviceHandle);
-    for (auto it: renamed_values)
+    // Send info to IoTHub via reported properties 
+    if (!(std::find(topicsToReport.begin(), topicsToReport.end(), topic_name.c_str()) == topicsToReport.end()))
     {
-        const std::string& key = it.first;
-        const Variant& value   = it.second;
-        char _buffer [256] = {0};
-        snprintf(_buffer, sizeof(_buffer), " %s = %f", key.c_str(), value.convert<double>());
-        ROS_INFO("%s",_buffer);
-        sendMsgToAzureIoTHub(_buffer, deviceHandle);
+        ROS_INFO("Topic being reported via reported_properties: %s", topic_name.c_str()); 
+
+        for (auto it: flat_container.name)
+        {
+            const std::string& value  = it.second;
+            ROS_INFO("Message being reported via reported_properties: %s", value.c_str()); 
+            reportedProperties = serializeToJson(topic_name, value);
+            // Function to send reported properties 
+            (void)IoTHubDeviceClient_SendReportedState(deviceHandle, (const unsigned char*)reportedProperties, strlen(reportedProperties), reportedStateCallback, NULL);
+        }
     }
-    for (auto it: flat_container.name)
+    else // Send info to IoTHub via telemetry 
     {
-        const std::string& key    = it.first.toStdString();
-        const std::string& value  = it.second;
-        char _buffer [256] = {0};
-        snprintf(_buffer, sizeof(_buffer), " %s = %s", key.c_str(), value.c_str());
-        ROS_INFO("%s",_buffer);
-        sendMsgToAzureIoTHub(_buffer, deviceHandle);
+        ROS_INFO("--------- %s ----------", topic_name.c_str() ); 
+        sendMsgToAzureIoTHub(topic_name.c_str(), deviceHandle);
+        for (auto it: renamed_values)
+        {
+            const std::string& key = it.first;
+            const Variant& value   = it.second;
+            char _buffer [256] = {0};
+            snprintf(_buffer, sizeof(_buffer), " %s = %f", key.c_str(), value.convert<double>());
+            ROS_INFO("%s",_buffer);
+            sendMsgToAzureIoTHub(_buffer, deviceHandle);
+        }
+        for (auto it: flat_container.name)
+        {
+            const std::string& key    = it.first.toStdString();
+            const std::string& value  = it.second;
+            char _buffer [256] = {0};
+            snprintf(_buffer, sizeof(_buffer), " %s = %s", key.c_str(), value.c_str());
+            ROS_INFO("%s",_buffer);
+            sendMsgToAzureIoTHub(_buffer, deviceHandle);
+        }
     }
 }
 
@@ -271,7 +318,7 @@ static void subscribeTopic(const char* topicName, ROS_Azure_IoT_Hub* iotHub)
     boost::function<void(const topic_tools::ShapeShifter::ConstPtr&) > callback;
     callback = [iotHub, topicName](const topic_tools::ShapeShifter::ConstPtr& msg) -> void
     {
-        topicCallback(msg, topicName, iotHub->parser, iotHub->deviceHandle) ;
+        topicCallback(msg, topicName, iotHub->parser, iotHub->deviceHandle, iotHub->topicsToReport, iotHub->reportedProperties);
     };
     iotHub->subscribers.push_back( iotHub->nh.subscribe(topicName, 10, callback) );
 }
@@ -293,18 +340,38 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
     JSON_Object* arrayObject = json_object_dotget_object(ros_object, "ros_relays");
     size_t objectCount = json_object_get_count(arrayObject);
 
+    std::string reportedProp = "reported";
+
     for (size_t i = 0; i < objectCount; i++)
     {
         ROS_INFO("  %s", json_object_get_name(arrayObject, i));
-        JSON_Value* value = json_object_get_value_at(arrayObject, i);
-        const char* topicToSubscribe = json_value_get_string(value);
-        ROS_INFO("  %s", json_value_get_string(value));
+        JSON_Value* configure_value = json_object_get_value_at(arrayObject, i);
+        JSON_Object* configure_object = json_value_get_object(configure_value);
+
+        // Get relay method for topic 
+        const char *relay_method = NULL;
+
+        JSON_Value* relay_method_value = json_object_get_value(configure_object, "relay_method");
+        if (relay_method_value != NULL)
+        {
+            relay_method = json_value_get_string(relay_method_value);
+        }
+
+        // Get topic name 
+        JSON_Value* topic_value = json_object_get_value(configure_object, "topic");
+        const char* topicToSubscribe = json_value_get_string(topic_value);
+        ROS_INFO("  %s", json_value_get_string(topic_value));
 
         // Only subscribe the topic that is avaiable but not subscribed before
         if (topicToSubscribe != NULL && IsTopicAvailableForSubscribe(topicToSubscribe) && std::find(iotHub->topicsToSubscribe.begin(), iotHub->topicsToSubscribe.end(), topicToSubscribe) == iotHub->topicsToSubscribe.end())
         {
             ROS_INFO("Subscribe topic:  %s", topicToSubscribe);
             iotHub->topicsToSubscribe.push_back(topicToSubscribe);
+            // Differentiate between topics with different desired relay methods 
+            if (strcmp(relay_method, (const char*)reportedProp.c_str()) == 0)
+            {
+                iotHub->topicsToReport.push_back(topicToSubscribe);
+            }
             subscribeTopic(topicToSubscribe, iotHub);
         }
     }
@@ -315,29 +382,29 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
 
     for (size_t i = 0; i < objectCount; i++)
     {
-        JSON_Value* congifure_value = json_object_get_value_at(arrayObject, i);
-        JSON_Object* congifure_object = json_value_get_object(congifure_value);
+        JSON_Value* configure_value = json_object_get_value_at(arrayObject, i);
+        JSON_Object* configure_object = json_value_get_object(configure_value);
 
         const char *node = NULL, *param = NULL, *type = NULL, *value = NULL;
-        JSON_Value* node_value = json_object_get_value(congifure_object, "node");
+        JSON_Value* node_value = json_object_get_value(configure_object, "node");
         if (node_value != NULL)
         {
             node = json_value_get_string(node_value);
         }
 
-        JSON_Value* param_value = json_object_get_value(congifure_object, "param");
+        JSON_Value* param_value = json_object_get_value(configure_object, "param");
         if (param_value != NULL)
         {
             param = json_value_get_string(param_value);
         }
 
-        JSON_Value* type_value = json_object_get_value(congifure_object, "type");
+        JSON_Value* type_value = json_object_get_value(configure_object, "type");
         if (type_value != NULL)
         {
             type = json_value_get_string(type_value);
         }
 
-        JSON_Value* val_value = json_object_get_value(congifure_object, "value");
+        JSON_Value* val_value = json_object_get_value(configure_object, "value");
         if (val_value != NULL)
         {
             value = json_value_get_string(val_value);
@@ -407,6 +474,7 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
     // Free resources
     json_value_free(root_value);
 }
+
 
 static bool ReadKeyFromFile(const std::string fileName, std::string &key)
 {
