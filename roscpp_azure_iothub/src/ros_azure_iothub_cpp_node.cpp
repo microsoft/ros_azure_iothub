@@ -227,10 +227,11 @@ static char* serializeToJson(std::string topic, std::string message)
     JSON_Object* root_object = json_value_get_object(root_value);
 
     std::string topic_header = "ros_messages." + topic;
-    std::string msg = "[\"" + message + "\"]";
+    std::string msg = "[" + message + "]";
     (void)json_object_dotset_value(root_object, topic_header.c_str(), json_parse_string(msg.c_str()));
 
     result = json_serialize_to_string_pretty(root_value);
+    puts(result);
 
     json_value_free(root_value);
 
@@ -241,6 +242,23 @@ static void reportedStateCallback(int status_code, void* userContextCallback)
 {
     (void)userContextCallback;
     printf("Device Twin reported properties update completed with result: %d\r\n", status_code);
+}
+
+void buildReportedString(std::string& topic_msg, std::string msg, bool& first)
+{
+    if(first)
+    {
+        topic_msg += "\"";
+        topic_msg += msg;
+        topic_msg += "\"";
+        first = false;
+    }
+    else 
+    {
+        topic_msg += ",\"";
+        topic_msg += msg;
+        topic_msg += "\"";
+    }
 }
 
 
@@ -277,16 +295,30 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
     // Send info to IoTHub via reported properties 
     if (!(std::find(topicsToReport.begin(), topicsToReport.end(), topic_name.c_str()) == topicsToReport.end()))
     {
-        ROS_INFO("Topic being reported via reported_properties: %s", topic_name.c_str()); 
+        ROS_INFO("Sending message from %s to IoTHub via reported properties ", topic_name.c_str()); 
 
+        std::string topic_msg = "";
+        bool first = true;
+
+        for (auto it: renamed_values)
+        {
+            const std::string& key = it.first;
+            const Variant& value   = it.second;
+            char _buffer [256] = {0};
+            snprintf(_buffer, sizeof(_buffer), "%s = %f", key.c_str(), value.convert<double>());
+            buildReportedString(topic_msg, (std::string)_buffer, first);
+        }
         for (auto it: flat_container.name)
         {
+            const std::string& key    = it.first.toStdString();
             const std::string& value  = it.second;
-            ROS_INFO("Message being reported via reported_properties: %s", value.c_str()); 
-            reportedProperties = serializeToJson(topic_name, value);
-            // Function to send reported properties 
-            (void)IoTHubDeviceClient_SendReportedState(deviceHandle, (const unsigned char*)reportedProperties, strlen(reportedProperties), reportedStateCallback, NULL);
+            char _buffer [256] = {0};
+            snprintf(_buffer, sizeof(_buffer), "%s = %s", key.c_str(), value.c_str());
+            buildReportedString(topic_msg, (std::string)_buffer, first);
         }
+
+        reportedProperties = serializeToJson(topic_name, topic_msg);
+        (void)IoTHubDeviceClient_SendReportedState(deviceHandle, (const unsigned char*)reportedProperties, strlen(reportedProperties), reportedStateCallback, NULL);
     }
     else // Send info to IoTHub via telemetry 
     {
