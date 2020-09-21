@@ -69,7 +69,7 @@ source /install/setup.bash
 ```
 
 # Deployment (IoT Hub for telemetry reporting or reported properties channel)
-Device twins are JSON documents that store device state information including metadata, configurations, and conditions. Azure IoT Hub maintains a device twin for each device that you connect to IoT Hub. And we are using `desired` properties as a channel to ask our ROS node what ROS topics to report. The messages recieved from these ROS topics can either be reported through the telemetry channel or through the `reported` property channel. 
+Device twins are JSON documents that store device state information including metadata, configurations, and conditions. Azure IoT Hub maintains a device twin for each device that you connect to IoT Hub. And we are using `desired` properties as a channel to ask our ROS node what ROS topics to report. The messages recieved from these ROS topics can either be reported through the telemetry channel or through the `reported` property channel. The telemetry channel is designed for high bandwidth data and the history of messages sent over this channel are stored. The reported property channel is designed for low bandwidth data and it advertises only the latest message for each topic that is subscribed to. 
 
 Here is a JSON example to report `/rosout` via telemetry and `/initialpose` via reported properties:
 

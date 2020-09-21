@@ -244,14 +244,13 @@ static void reportedStateCallback(int status_code, void* userContextCallback)
     printf("Device Twin reported properties update completed with result: %d\r\n", status_code);
 }
 
-void buildReportedString(std::string& topic_msg, std::string msg, bool& first)
+void buildReportedString(std::string& topic_msg, std::string msg)
 {
-    if(first)
+    if(topic_msg.empty())
     {
         topic_msg += "\"";
         topic_msg += msg;
         topic_msg += "\"";
-        first = false;
     }
     else 
     {
@@ -295,26 +294,25 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
     // Send info to IoTHub via reported properties 
     if (!(std::find(topicsToReport.begin(), topicsToReport.end(), topic_name.c_str()) == topicsToReport.end()))
     {
-        ROS_INFO("Sending message from %s to IoTHub via reported properties ", topic_name.c_str()); 
+        ROS_DEBUG("Sending message from %s to IoTHub via reported properties ", topic_name.c_str()); 
 
         std::string topic_msg = "";
-        bool first = true;
 
         for (auto it: renamed_values)
         {
             const std::string& key = it.first;
             const Variant& value   = it.second;
-            char _buffer [256] = {0};
-            snprintf(_buffer, sizeof(_buffer), "%s = %f", key.c_str(), value.convert<double>());
-            buildReportedString(topic_msg, (std::string)_buffer, first);
+            char char_buffer [256] = {0};
+            snprintf(char_buffer, sizeof(char_buffer), "%s = %f", key.c_str(), value.convert<double>());
+            buildReportedString(topic_msg, (std::string)char_buffer);
         }
         for (auto it: flat_container.name)
         {
             const std::string& key    = it.first.toStdString();
             const std::string& value  = it.second;
-            char _buffer [256] = {0};
-            snprintf(_buffer, sizeof(_buffer), "%s = %s", key.c_str(), value.c_str());
-            buildReportedString(topic_msg, (std::string)_buffer, first);
+            char char_buffer [256] = {0};
+            snprintf(char_buffer, sizeof(char_buffer), "%s = %s", key.c_str(), value.c_str());
+            buildReportedString(topic_msg, (std::string)char_buffer);
         }
 
         reportedProperties = serializeToJson(topic_name, topic_msg);
@@ -328,19 +326,19 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
         {
             const std::string& key = it.first;
             const Variant& value   = it.second;
-            char _buffer [256] = {0};
-            snprintf(_buffer, sizeof(_buffer), " %s = %f", key.c_str(), value.convert<double>());
-            ROS_INFO("%s",_buffer);
-            sendMsgToAzureIoTHub(_buffer, deviceHandle);
+            char char_buffer [256] = {0};
+            snprintf(char_buffer, sizeof(char_buffer), " %s = %f", key.c_str(), value.convert<double>());
+            ROS_INFO("%s",char_buffer);
+            sendMsgToAzureIoTHub(char_buffer, deviceHandle);
         }
         for (auto it: flat_container.name)
         {
             const std::string& key    = it.first.toStdString();
             const std::string& value  = it.second;
-            char _buffer [256] = {0};
-            snprintf(_buffer, sizeof(_buffer), " %s = %s", key.c_str(), value.c_str());
-            ROS_INFO("%s",_buffer);
-            sendMsgToAzureIoTHub(_buffer, deviceHandle);
+            char char_buffer [256] = {0};
+            snprintf(char_buffer, sizeof(char_buffer), " %s = %s", key.c_str(), value.c_str());
+            ROS_INFO("%s",char_buffer);
+            sendMsgToAzureIoTHub(char_buffer, deviceHandle);
         }
     }
 }
