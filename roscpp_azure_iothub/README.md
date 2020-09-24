@@ -68,10 +68,10 @@ catkin_make install
 source /install/setup.bash
 ```
 
-# Deployment (IoT Hub for telemetry reporting)
-Device twins are JSON documents that store device state information including metadata, configurations, and conditions. Azure IoT Hub maintains a device twin for each device that you connect to IoT Hub. And we are using `desired` properties as a channel to ask our ROS node what ROS topics to report.
+# Deployment (IoT Hub for telemetry reporting or reported properties channel)
+Device twins are JSON documents that store device state information including metadata, configurations, and conditions. Azure IoT Hub maintains a device twin for each device that you connect to IoT Hub. And we are using `desired` properties as a channel to ask our ROS node what ROS topics to report. The messages recieved from these ROS topics can either be reported through the telemetry channel or through the `reported` property channel. The telemetry channel is designed for high bandwidth data and the history of messages sent over this channel are stored. The reported property channel is designed for low bandwidth data and it advertises only the latest message for each topic that is subscribed to. 
 
-Here is a JSON example to report `/rosout`:
+Here is a JSON example to report `/rosout` via telemetry and `/initialpose` via reported properties:
 
 ``` json
 {
@@ -79,7 +79,14 @@ Here is a JSON example to report `/rosout`:
     "properties": {
         "desired": {
             "ros_relays": {
-                "1": "/rosout"
+                "1": {
+                    "topic": "/rosout",
+                    "relay_method": "telemetry"
+                },
+                "2": {
+                    "topic": "/initialpose",
+                    "relay_method": "reported"
+                }
             }
         }
     }
@@ -91,7 +98,28 @@ And add the `ros_relays` block to the device twin which you are about to connect
 ``` bash
 az iot hub monitor-events --hub-name <YourIoTHubName> --output table
 ```
-
+You should also see the `reported` properties section updated in your device twin each time `/initialpose` is published to:
+(Note: The message recieved from `/initialpose` below is consolidated for brevity)
+``` json
+{
+    "deviceId": "devA",
+    "properties": {
+        "desired": {
+        },
+        "reported": {
+            "ros_messages": {
+                "/initialpose": [
+                    "/initialpose/header/seq = 39.000000",
+                    "/initialpose/header/stamp = 1600466498.040267",
+                    "/initialpose/pose/pose/position/x = 1.000000",
+                    "/initialpose/pose/pose/orientation/x = 0.000000",
+                    "/initialpose/pose/covariance.0 = 0.250000",
+                    "/initialpose/header/frame_id = map"
+                ]
+            }
+    }
+}
+```
 # Deployment (IoT Hub for dynamic configuration)
 [Dynamic Reconfiguration](http://wiki.ros.org/dynamic_reconfigure) provides a way to change the node parameters during runtime without restarting the node.
 Similar as the telemetry reporting, we are using the device twin `desired` properties as a channel to ask our ROS node what dynamic parameters to reconfigure.
