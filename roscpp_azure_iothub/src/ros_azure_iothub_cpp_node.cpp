@@ -221,27 +221,36 @@ void sendMsgToAzureIoTHub(const char* msg, IOTHUB_DEVICE_CLIENT_HANDLE deviceHan
 // Message serialization for sending topic messages via reported properties 
 static char* serializeToJson(std::string topic, std::string message)
 {
-    char* result = NULL;
+    try
+    {
+        char* result = NULL;
 
-    JSON_Value* root_value = json_value_init_object();
-    JSON_Object* root_object = json_value_get_object(root_value);
+        JSON_Value* root_value = json_value_init_object();
+        JSON_Object* root_object = json_value_get_object(root_value);
 
-    std::string topic_header = "ros_messages." + topic;
-    std::string msg = "{" + message + "}";
-    (void)json_object_dotset_value(root_object, topic_header.c_str(), json_parse_string(msg.c_str()));
+        std::string topic_header = "ros_messages." + topic;
+        std::string msg = "{" + message + "}";
+        (void)json_object_dotset_value(root_object, topic_header.c_str(), json_parse_string(msg.c_str()));
 
-    result = json_serialize_to_string_pretty(root_value);
-    puts(result);
+        result = json_serialize_to_string_pretty(root_value);
+        ROS_DEBUG("%s", result);
 
-    json_value_free(root_value);
+        json_value_free(root_value);
 
-    return result;
+        return result;
+
+    }
+    catch(const std::exception& e) 
+    {
+        ROS_DEBUG("Error serializing string into JSON: %s", e.what());
+    }
+
 }
 
 static void reportedStateCallback(int status_code, void* userContextCallback)
 {
     (void)userContextCallback;
-    printf("Device Twin reported properties update completed with result: %d\r\n", status_code);
+    ROS_DEBUG("Device Twin reported properties update completed with result: %d\r\n", status_code);
 }
 
 void buildReportedString(std::string& topic_msg, std::string msg)
@@ -375,7 +384,7 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
         JSON_Object* configure_object = json_value_get_object(configure_value);
 
         // Get relay method for topic 
-        const char *relay_method = NULL;
+        const char* relay_method = NULL;
 
         JSON_Value* relay_method_value = json_object_get_value(configure_object, "relay_method");
         if (relay_method_value != NULL)
@@ -394,7 +403,7 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
             ROS_INFO("Subscribe topic:  %s", topicToSubscribe);
             iotHub->topicsToSubscribe.push_back(topicToSubscribe);
             // Differentiate between topics with different desired relay methods 
-            if (strcmp(relay_method, (const char*)reportedProp.c_str()) == 0)
+            if (reportedProp.compare(relay_method) == 0)
             {
                 iotHub->topicsToReport.push_back(topicToSubscribe);
             }
