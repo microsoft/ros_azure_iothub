@@ -227,7 +227,7 @@ static char* serializeToJson(std::string topic, std::string message)
     JSON_Object* root_object = json_value_get_object(root_value);
 
     std::string topic_header = "ros_messages." + topic;
-    std::string msg = "[" + message + "]";
+    std::string msg = "{" + message + "}";
     (void)json_object_dotset_value(root_object, topic_header.c_str(), json_parse_string(msg.c_str()));
 
     result = json_serialize_to_string_pretty(root_value);
@@ -248,18 +248,14 @@ void buildReportedString(std::string& topic_msg, std::string msg)
 {
     if(topic_msg.empty())
     {
-        topic_msg += "\"";
         topic_msg += msg;
-        topic_msg += "\"";
     }
     else 
     {
-        topic_msg += ",\"";
+        topic_msg += ", ";
         topic_msg += msg;
-        topic_msg += "\"";
     }
 }
-
 
 void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
                    const std::string &topic_name,
@@ -297,13 +293,13 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
         ROS_DEBUG("Sending message from %s to IoTHub via reported properties ", topic_name.c_str()); 
 
         std::string topic_msg = "";
-
+        (void) reportedProperties;
         for (auto it: renamed_values)
         {
             const std::string& key = it.first;
             const Variant& value   = it.second;
             char char_buffer [256] = {0};
-            snprintf(char_buffer, sizeof(char_buffer), "%s = %f", key.c_str(), value.convert<double>());
+            snprintf(char_buffer, sizeof(char_buffer), "\"%s\":\"%f\"", key.c_str(), value.convert<double>());
             buildReportedString(topic_msg, (std::string)char_buffer);
         }
         for (auto it: flat_container.name)
@@ -311,7 +307,7 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
             const std::string& key    = it.first.toStdString();
             const std::string& value  = it.second;
             char char_buffer [256] = {0};
-            snprintf(char_buffer, sizeof(char_buffer), "%s = %s", key.c_str(), value.c_str());
+            snprintf(char_buffer, sizeof(char_buffer), "\"%s\":\"%s\"", key.c_str(), value.c_str());
             buildReportedString(topic_msg, (std::string)char_buffer);
         }
 

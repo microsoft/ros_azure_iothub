@@ -108,14 +108,14 @@ You should also see the `reported` properties section updated in your device twi
         },
         "reported": {
             "ros_messages": {
-                "/initialpose": [
-                    "/initialpose/header/seq = 39.000000",
-                    "/initialpose/header/stamp = 1600466498.040267",
-                    "/initialpose/pose/pose/position/x = 1.000000",
-                    "/initialpose/pose/pose/orientation/x = 0.000000",
-                    "/initialpose/pose/covariance.0 = 0.250000",
-                    "/initialpose/header/frame_id = map"
-                ]
+                "/initialpose": {
+                    "/initialpose/header/seq": "39.000000",
+                    "/initialpose/header/stamp": "1600466498.040267",
+                    "/initialpose/pose/pose/position/x": "1.000000",
+                    "/initialpose/pose/pose/orientation/x": "0.000000",
+                    "/initialpose/pose/covariance.0": "0.250000",
+                    "/initialpose/header/frame_id": "map"
+                }
             }
     }
 }
