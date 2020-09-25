@@ -244,7 +244,6 @@ static char* serializeToJson(std::string topic, std::string message)
     {
         ROS_DEBUG("Error serializing string into JSON: %s", e.what());
     }
-
 }
 
 static void reportedStateCallback(int status_code, void* userContextCallback)
@@ -302,7 +301,7 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
         ROS_DEBUG("Sending message from %s to IoTHub via reported properties ", topic_name.c_str()); 
 
         std::string topic_msg = "";
-        (void) reportedProperties;
+      
         for (auto it: renamed_values)
         {
             const std::string& key = it.first;
