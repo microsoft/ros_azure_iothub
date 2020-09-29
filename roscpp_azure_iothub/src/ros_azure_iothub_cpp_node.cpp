@@ -353,7 +353,7 @@ static void subscribeTopic(const char* topicName, ROS_Azure_IoT_Hub* iotHub)
     std::string topicNameCopy(topicName);
     callback = [iotHub, topicNameCopy](const topic_tools::ShapeShifter::ConstPtr& msg) -> void
     {
-        topicCallback(msg, topicName, iotHub->parser, iotHub->deviceHandle, iotHub->topicsToReport, iotHub->reportedProperties);
+        topicCallback(msg, topicNameCopy.c_str(), iotHub->parser, iotHub->deviceHandle, iotHub->topicsToReport, iotHub->reportedProperties);
     };
     iotHub->subscribers.push_back( iotHub->nh.subscribe(topicName, 10, callback) );
 }
