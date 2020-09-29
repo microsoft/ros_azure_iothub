@@ -350,7 +350,8 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
 static void subscribeTopic(const char* topicName, ROS_Azure_IoT_Hub* iotHub)
 {
     boost::function<void(const topic_tools::ShapeShifter::ConstPtr&) > callback;
-    callback = [iotHub, topicName](const topic_tools::ShapeShifter::ConstPtr& msg) -> void
+    std::string topicNameCopy(topicName);
+    callback = [iotHub, topicNameCopy](const topic_tools::ShapeShifter::ConstPtr& msg) -> void
     {
         topicCallback(msg, topicName, iotHub->parser, iotHub->deviceHandle, iotHub->topicsToReport, iotHub->reportedProperties);
     };
