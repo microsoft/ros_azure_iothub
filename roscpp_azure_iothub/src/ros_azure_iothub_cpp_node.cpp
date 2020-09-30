@@ -295,7 +295,8 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
     parser.deserializeIntoFlatContainer( topic_name, Span<uint8_t>(buffer), &flat_container, 100);
     parser.applyNameTransform( topic_name, flat_container, &renamed_values );
 
-    // Send info to IoTHub via reported properties 
+    // Send info to IoTHub via reported properties
+    // ref: https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-device-twins#tags-and-properties-format
     if (!(std::find(topicsToReport.begin(), topicsToReport.end(), topic_name.c_str()) == topicsToReport.end()))
     {
         ROS_DEBUG("Sending message from %s to IoTHub via reported properties ", topic_name.c_str()); 
@@ -307,6 +308,11 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
             const std::string& key = it.first;
             const Variant& value   = it.second;
             char char_buffer [256] = {0};
+            if (key.find('.')!=std::string::npos)
+            {
+                ROS_DEBUG_STREAM("Device twin doesn't support key with dots `.`: " << key);
+                continue;
+            }
             snprintf(char_buffer, sizeof(char_buffer), "\"%s\":\"%f\"", key.c_str(), value.convert<double>());
             buildReportedString(topic_msg, (std::string)char_buffer);
         }
@@ -315,6 +321,11 @@ void topicCallback(const topic_tools::ShapeShifter::ConstPtr& msg,
             const std::string& key    = it.first.toStdString();
             const std::string& value  = it.second;
             char char_buffer [256] = {0};
+            if (key.find('.')!=std::string::npos)
+            {
+                ROS_DEBUG_STREAM("Device twin doesn't support key with dots `.`: " << key);
+                continue;
+            }
             snprintf(char_buffer, sizeof(char_buffer), "\"%s\":\"%s\"", key.c_str(), value.c_str());
             buildReportedString(topic_msg, (std::string)char_buffer);
         }
