@@ -36,18 +36,11 @@ jobs:
         pushd src
         git clone https://github.com/facontidavide/ros_type_introspection
         popd
-
-        # For other chocolatey packages
-        # choco install <package>
-
-        # For vcpkgs
-        # vcpkg install <package>
-
-        catkin_make -DPYTHON_EXECUTABLE=C:\opt\ros\%ROSDISTRO%\x64\python.exe
+        catkin_make install -DPYTHON_EXECUTABLE=C:\opt\ros\%ROSDISTRO%\x64\python.exe
       env:
         ROSDISTRO: ${{ matrix.ROSDISTRO }}
 
     - uses: actions/upload-artifact@v1
       with:
         name: drop
-        path: c:/opt/install
+        path: install
