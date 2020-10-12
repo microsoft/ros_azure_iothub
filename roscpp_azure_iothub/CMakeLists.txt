@@ -73,8 +73,7 @@ else()
   message(FATAL_ERROR "Cannot locate azure-iot-sdk-c. Please ensure that dependency has been installed and the CMAKE_PREFIX_PATH contains the path to azure_iot_sdksConfig.cmake")
 endif()
 
-# TODO: add back in, but this generates an error, instead we want to look for a parson dll 
-add_library(parson STATIC # TODO, difference between static (original) and shared ?
+add_library(parson STATIC 
   parson/parson.c
   parson/parson.h
 )
@@ -88,16 +87,14 @@ include_directories(include)
 add_executable(${PROJECT_NAME}_node src/ros_azure_iothub_cpp_node.cpp)
 ament_target_dependencies(${PROJECT_NAME}_node rclcpp std_msgs) 
 
-# link_directories(${catkin_LIBRARY_DIRS}) # TODO, just commented out, not sure if its necessary 
-
-target_link_libraries(${PROJECT_NAME}_node parson) # TODO: not sure if it should be just (parson) instead
+target_link_libraries(${PROJECT_NAME}_node parson) 
 
 
 # prefer to use shared library.
 if (TARGET iothub_client_dll)
   message(STATUS "using iothub_client_dll")
 
-  target_link_libraries(${PROJECT_NAME}_node # TODO: fix target_link_libraries to ament_target_dependencies
+  target_link_libraries(${PROJECT_NAME}_node 
     $<TARGET_LINKER_FILE:iothub_client_dll>
   )
 elseif(TARGET iothub_client)
@@ -106,12 +103,12 @@ elseif(TARGET iothub_client)
   target_link_directories(${PROJECT_NAME}_node
     PRIVATE $<TARGET_LINKER_FILE_DIR:iothub_client>
   )
-  target_link_libraries(${PROJECT_NAME}_node # TODO: fix target_link_libraries to ament_target_dependencies
+  target_link_libraries(${PROJECT_NAME}_node 
     iothub_client
   )
 else()
   message(STATUS "using iot libs")
-  target_link_libraries(${PROJECT_NAME}_node # TODO: fix target_link_libraries to ament_target_dependencies
+  target_link_libraries(${PROJECT_NAME}_node 
     iothub_client
     iothub_client_mqtt_transport
     umqtt
@@ -138,11 +135,6 @@ install(TARGETS ${PROJECT_NAME}_node
   RUNTIME DESTINATION bin
 )
 
-# TODO: remove 
-# install(DIRECTORY launch/
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-# )
-
 install(TARGETS ${PROJECT_NAME}_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
@@ -155,15 +147,6 @@ install(DIRECTORY
 #############
 ##  Test   ##
 #############
-
-# TODO, remove below 
-# if(WIN32)
-#   if(CATKIN_ENABLE_TESTING)
-#     find_package(rostest REQUIRED)
-#     add_rostest_gtest(${PROJECT_NAME}_testnode test/testiothub.launch test/testiothub.cpp)
-#     target_link_libraries(${PROJECT_NAME}_testnode iothub_service_client ${catkin_LIBRARIES} )
-#   endif()
-# endif()
 
 if(WIN32)
   if (BUILD_TESTING)

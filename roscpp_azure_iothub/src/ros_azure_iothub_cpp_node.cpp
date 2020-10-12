@@ -11,7 +11,6 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/exceptions.hpp" 
-// #include "std_msgs/msg/string.hpp" // TODO: might not need this 
 
 // Azure IoT Hub
 #include <azure_macro_utils/macro_utils.h>
@@ -30,13 +29,8 @@ int g_interval = 10000;  // 10 sec send interval initially, currently not used
 const std::string g_authentication_SAS = "SAS";
 const std::string g_authentication_x509 = "x509";
 
-// TODO: remove, bad to have global node?, private vs. not private
-// rclcpp::Node nh("~"); // TODO: remove 
 std::shared_ptr<rclcpp::Node> nh;
 
-// static size_t g_message_count_send_confirmations = 0;
-
-// TODO: Remove this struct later on if the device handle ends up being the only thing we need 
 struct ROS_Azure_IoT_Hub {
     IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle;
 };
@@ -110,7 +104,7 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
     (void)size;
 
     ROS_Azure_IoT_Hub* iotHub = (ROS_Azure_IoT_Hub*)userContextCallback;
-    (void) iotHub; // TODO: remove this is temp fix for sub code being missing 
+    (void) iotHub; 
 
     JSON_Value* root_value = json_parse_string((const char*)payLoad);
     JSON_Object* root_object = json_value_get_object(root_value);
@@ -161,7 +155,6 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
                 if (!rclcpp::ok()) {
                     RCLCPP_ERROR(nh->get_logger(), "Interrupted while waiting for the parameter service. Exiting.");
                     return;
-                    // rclcpp::shutdown(); // TODO: we probably don't want to exit here, maybe change up the while loop 
                 }
                 RCLCPP_INFO(nh->get_logger(), "Parameter service not available, waiting again...");
             }
@@ -336,8 +329,6 @@ int main(int argc, char **argv)
     rclcpp::init(argc, argv);
     ROS_Azure_IoT_Hub iotHub;
 
-    // TODO: maybe we want two seperate nodes: one private one to send ROS messages 
-    // Another one in IoT Hub for dynamic reconfig
     nh = rclcpp::Node::make_shared("ros_azure_iothub");
 
     if (!InitializeAzureIoTHub(&iotHub))
@@ -346,7 +337,7 @@ int main(int argc, char **argv)
     }
 
     rclcpp::spin(nh);
-    rclcpp::shutdown(); // TODO is it needed? 
+    rclcpp::shutdown();
 
     DeinitializeAzureIoTHub(&iotHub);
     return 0;
