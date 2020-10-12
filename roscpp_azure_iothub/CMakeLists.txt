@@ -34,6 +34,8 @@ if(MSVC)
   add_compile_options(/wd4127)
   # WORKAROUND: parson/parson.c(62): warning C4232: nonstandard extension used: 'parson_malloc'
   add_compile_options(/wd4232)
+  # WORKAROUND: rclcpp/loaned_message.hpp(144,1): warning C4456: declaration of 'ret' hides previous local declaration 
+  add_compile_options(/wd4456)
 endif()
 
 find_package(ament_cmake REQUIRED)
@@ -71,7 +73,8 @@ else()
   message(FATAL_ERROR "Cannot locate azure-iot-sdk-c. Please ensure that dependency has been installed and the CMAKE_PREFIX_PATH contains the path to azure_iot_sdksConfig.cmake")
 endif()
 
-add_library(parson SHARED # TODO, difference between static (original) and shared ?
+# TODO: add back in, but this generates an error, instead we want to look for a parson dll 
+add_library(parson STATIC # TODO, difference between static (original) and shared ?
   parson/parson.c
   parson/parson.h
 )
@@ -83,20 +86,12 @@ add_library(parson SHARED # TODO, difference between static (original) and share
 include_directories(include)
 
 add_executable(${PROJECT_NAME}_node src/ros_azure_iothub_cpp_node.cpp)
+ament_target_dependencies(${PROJECT_NAME}_node rclcpp std_msgs) 
 
-link_directories(${catkin_LIBRARY_DIRS})
+# link_directories(${catkin_LIBRARY_DIRS}) # TODO, just commented out, not sure if its necessary 
 
-# TODO: remove below
-# target_link_libraries(${PROJECT_NAME}_node
-#   ${catkin_LIBRARIES}
-#   parson
-# )
+target_link_libraries(${PROJECT_NAME}_node parson) # TODO: not sure if it should be just (parson) instead
 
-# TODO: error, package name parson not found
-# ament_target_dependencies(${PROJECT_NAME}_node
-#   parson)
-
-ament_target_dependencies(${PROJECT_NAME}_node)
 
 # prefer to use shared library.
 if (TARGET iothub_client_dll)
@@ -147,6 +142,10 @@ install(TARGETS ${PROJECT_NAME}_node
 # install(DIRECTORY launch/
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 # )
+
+install(TARGETS ${PROJECT_NAME}_node
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
 
 install(DIRECTORY
   launch
