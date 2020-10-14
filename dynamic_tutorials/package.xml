@@ -1,15 +1,22 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>dynamic_tutorials</name>
-  <version>1.0.0</version>
-  <description>This sample package demostrates how to set up up Dynamic Reconfigure for a ROS node.</description>
-  <maintainer email="baoxij@microsoft.com">Baoxi Jia</maintainer>
+  <version>0.0.1</version>
+  <description>
+  Minimal node for testing ros_azure_iothub dynamic reconfiguration of parameters
+  </description>
+
+  <maintainer email="amhassa@microsoft.com">Amel Hassan</maintainer>
+  <author>Amel Hassan</author>
   <license>MIT</license>
-  <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>dynamic_reconfigure</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_export_depend>dynamic_reconfigure</build_export_depend>
-  <build_export_depend>roscpp</build_export_depend>
-  <exec_depend>dynamic_reconfigure</exec_depend>
-  <exec_depend>roscpp</exec_depend>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+
 </package>
