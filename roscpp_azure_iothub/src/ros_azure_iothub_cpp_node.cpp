@@ -218,7 +218,7 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
                     RCLCPP_INFO(nh->get_logger(), "Could not set parameter");
                 }
             }
-            catch (const std::exception& e) // TODO: Exception thrown: Node has already been added to an executor.
+            catch (const std::exception& e) // TODO: Exception thrown: Node has already been added to an executor, even though params update.
             {
                 RCLCPP_ERROR(nh->get_logger(), "Exception thrown while setting parameter: %s", e.what());
             }
