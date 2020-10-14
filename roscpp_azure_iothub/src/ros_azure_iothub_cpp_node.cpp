@@ -31,6 +31,16 @@ const std::string g_authentication_x509 = "x509";
 
 std::shared_ptr<rclcpp::Node> nh;
 
+class iotNode : public rclcpp::Node
+{
+    public:
+        iotNode() : Node("ros_azure_iothub") {
+            this->declare_parameter("connection_string", "HostName=sample.azure-devices.net;DeviceId=rosbot;SharedAccessKey=sampleKey");
+            this->declare_parameter("authenticationType", "");
+        }
+    private:
+};
+
 struct ROS_Azure_IoT_Hub {
     IOTHUB_DEVICE_CLIENT_HANDLE deviceHandle;
 };
@@ -149,7 +159,7 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
         {
             RCLCPP_INFO(nh->get_logger(), "Trying to send dynamic configuration command - node:%s, parameter:%s, data type:%s, value:%s", node, param, type, value);
 
-            std::shared_ptr<rclcpp::SyncParametersClient> parameters_client = std::make_shared<rclcpp::SyncParametersClient>(nh, node);
+            auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(nh, node); //node
 
             while (!parameters_client->wait_for_service(std::chrono::seconds(1))) {
                 if (!rclcpp::ok()) {
@@ -158,26 +168,30 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
                 }
                 RCLCPP_INFO(nh->get_logger(), "Parameter service not available, waiting again...");
             }
-            
-            // Make sure parameter exists 
-            if (parameters_client->has_parameter(param))
+
+            RCLCPP_INFO(nh->get_logger(), "Parameter service is available");
+
+        
+        try
+        {
+            rclcpp::Parameter updated_param = rclcpp::Parameter(param, value);
+            rcl_interfaces::msg::SetParametersResult result;
+            result = parameters_client->set_parameters_atomically({updated_param});
+
+            if (result.successful == true)
             {
-                // Update value of param and set 
-                rclcpp::Parameter updated_param = rclcpp::Parameter(param, value);
-                std::vector<rcl_interfaces::msg::SetParametersResult> result;
-                try 
-                {
-                    result= parameters_client->set_parameters({updated_param});
-                }
-                catch(rclcpp::exceptions::ParameterNotDeclaredException &e)
-                {
-                    RCLCPP_ERROR(nh->get_logger(), "Failed setting parameter, failure executing dynamic configuration command: ", e.what());
-                }
+                RCLCPP_INFO(nh->get_logger(), "Successfully set parameter");
             }
-            else 
+            else
             {
-                RCLCPP_ERROR(nh->get_logger(), "Parameter does not exist, failure executing dynamic configuration command");
+                RCLCPP_INFO(nh->get_logger(), "Could not set parameter");
             }
+        }
+        catch (const std::exception& e) // TODO: Exception thrown: Node has already been added to an executor.
+        {
+            RCLCPP_ERROR(nh->get_logger(), "Exception thrown while setting parameter: %s", e.what());
+        }
+        
         } 
     }
 
@@ -268,7 +282,6 @@ static bool InitializeAzureIoTHub(ROS_Azure_IoT_Hub* iotHub)
 
     (void)IoTHub_Init();
     
-    // rclcpp::Node nh("~"); 
     RCLCPP_INFO(nh->get_logger(), "Creating IoTHub Device handle");
 
     std::string connectionString;
@@ -329,7 +342,7 @@ int main(int argc, char **argv)
     rclcpp::init(argc, argv);
     ROS_Azure_IoT_Hub iotHub;
 
-    nh = rclcpp::Node::make_shared("ros_azure_iothub");
+    nh = std::make_shared<iotNode>();
 
     if (!InitializeAzureIoTHub(&iotHub))
     {
