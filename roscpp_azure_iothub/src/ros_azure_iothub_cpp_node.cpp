@@ -25,6 +25,8 @@
 #include <parson.h>
 #include <iothubtransportmqtt.h>
 
+#include "boost/lexical_cast.hpp"
+
 int g_interval = 10000;  // 10 sec send interval initially, currently not used
 const std::string g_authentication_SAS = "SAS";
 const std::string g_authentication_x509 = "x509";
@@ -161,7 +163,7 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
         {
             RCLCPP_INFO(nh->get_logger(), "Trying to send dynamic configuration command - node:%s, parameter:%s, data type:%s, value:%s", node, param, type, value);
 
-            auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(nh, node); //node
+            auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(nh, node);
 
             while (!parameters_client->wait_for_service(std::chrono::seconds(1))) {
                 if (!rclcpp::ok()) {
@@ -173,27 +175,53 @@ static void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsi
 
             RCLCPP_INFO(nh->get_logger(), "Parameter service is available");
 
-        
-        try
-        {
-            rclcpp::Parameter updated_param = rclcpp::Parameter(param, value);
+            rclcpp::Parameter updated_param;
             rcl_interfaces::msg::SetParametersResult result;
-            result = parameters_client->set_parameters_atomically({updated_param});
 
-            if (result.successful == true)
+            // Update parameter's value 
+            if (strcmp(type, "string") == 0)
             {
-                RCLCPP_INFO(nh->get_logger(), "Successfully set parameter");
+                updated_param = rclcpp::Parameter(param, value);
             }
-            else
+            else if (strcmp(type, "int") == 0)
             {
-                RCLCPP_INFO(nh->get_logger(), "Could not set parameter");
+                updated_param = rclcpp::Parameter(param, std::stoi(value));
             }
-        }
-        catch (const std::exception& e) // TODO: Exception thrown: Node has already been added to an executor.
-        {
-            RCLCPP_ERROR(nh->get_logger(), "Exception thrown while setting parameter: %s", e.what());
-        }
-        
+            else if (strcmp(type, "double") == 0)
+            {
+                updated_param = rclcpp::Parameter(param, strtod(value, NULL));
+            }
+            else if (strcmp(type, "bool") == 0)
+            {
+                try
+                {
+                    updated_param = rclcpp::Parameter(param, boost::lexical_cast<bool>(value));
+                }
+                catch (const boost::bad_lexical_cast &e)
+                {
+                    (void)e;
+                    RCLCPP_ERROR(nh->get_logger(), "Failure converting %s to bool type", value);
+                }
+            }
+
+            // Set parameter 
+            try
+            {
+                result = parameters_client->set_parameters_atomically({updated_param});
+
+                if (result.successful == true)
+                {
+                    RCLCPP_INFO(nh->get_logger(), "Successfully set parameter");
+                }
+                else
+                {
+                    RCLCPP_INFO(nh->get_logger(), "Could not set parameter");
+                }
+            }
+            catch (const std::exception& e) // TODO: Exception thrown: Node has already been added to an executor.
+            {
+                RCLCPP_ERROR(nh->get_logger(), "Exception thrown while setting parameter: %s", e.what());
+            }
         } 
     }
 

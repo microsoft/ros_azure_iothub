@@ -16,7 +16,7 @@ def generate_launch_description():
             name='roscpp_azure_iothub_node',
             parameters=[
                 {"connection_string": "HostName=sample.azure-devices.net;DeviceId=rosbot;SharedAccessKey=sampleKey", 
-                    "authenticationType": ""} # Update your connection and authentication here. 
+                    "authenticationType": ""} # Update your connection and authentication here.
             ]
         )
     ])
