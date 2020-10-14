@@ -8,13 +8,13 @@ To use this ROS node on your Robot, you will need:
     * See more on [Quickstart: Send telemetry from a device to an IoT hub and read the telemetry from the hub with a back-end application](https://docs.microsoft.com/en-us/azure/iot-hub/quickstart-send-telemetry-c).
   * ROS installation.
     * For Windows environment, check [ROS on Windows](https://aka.ms/ros).
-    * For Ubuntu Linux environment, check [Ubuntu install of ROS Melodic](http://wiki.ros.org/melodic/Installation/Ubuntu).
+    * For Ubuntu Linux environment, check [Ubuntu install of ROS (http://wiki.ros.org/noetic/Installation/Ubuntu).
 
 # How to Build (ROS on Windows)
 Here is an example how to build it for ROS on Windows.
 ```Batchfile
 :: source ROS environment
-c:\opt\ros\melodic\x64\setup.bat
+c:\opt\ros\noetic\x64\setup.bat
 
 :: create catkin workspace folders
 mkdir catkin_ws\src
@@ -24,7 +24,7 @@ pushd catkin_ws
 pushd src
 git clone https://github.com/ms-iot/abseil-cpp -b init_windows
 git clone https://github.com/facontidavide/ros_type_introspection
-git clone --recursive https://github.com/Microsoft/ros_azure_iothub
+git clone -b noetic-devel --recursive https://github.com/Microsoft/ros_azure_iothub
 popd
 
 :: install system dependencies
@@ -36,12 +36,12 @@ catkin_make_isolated --only-pkg-with-deps roscpp_azure_iothub --install
 install_isolated\setup.bat
 ```
 
-# How to Build (Ubuntu Linux Melodic install)
-Here is an example how to build it for Ubuntu Linux Melodic install.
+# How to Build (Ubuntu Linux install)
+Here is an example how to build it for Ubuntu ROS Linux install.
 
 ``` bash
 # source ROS environment
-source /opt/ros/melodic/setup.bash
+source /opt/ros/noetic/setup.bash
 
 # create catkin workspace folders
 mkdir catkin_ws/src -p
