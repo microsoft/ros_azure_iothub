@@ -37,6 +37,8 @@ class iotNode : public rclcpp::Node
         iotNode() : Node("ros_azure_iothub") {
             this->declare_parameter("connection_string", "HostName=sample.azure-devices.net;DeviceId=rosbot;SharedAccessKey=sampleKey");
             this->declare_parameter("authenticationType", "");
+            this->declare_parameter("private_key_file", "");
+            this->declare_parameter("public_key_file", "");
         }
     private:
 };

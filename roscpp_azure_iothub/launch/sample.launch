@@ -1,8 +1,0 @@
-<launch>
-  <arg name="connection_string" default="HostName=sample.azure-devices.net;DeviceId=rosbot;SharedAccessKey=sampleKey" />
-  <node pkg="roscpp_azure_iothub" type="roscpp_azure_iothub_node" name="roscpp_azure_iothub_node" output="screen">
-    <rosparam subst_value="true">
-      connection_string: $(arg connection_string)
-    </rosparam>
-  </node>
-</launch>
