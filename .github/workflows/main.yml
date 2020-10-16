@@ -25,7 +25,7 @@ jobs:
       shell: cmd
       run: |
         choco sources add -n=roswin -s https://aka.ms/ros/public --priority 1
-        choco install ros-%ROSDISTRO%-desktop_full -y --no-progress
+        choco install ros-%ROSDISTRO%-desktop -y --no-progress
       env:
         ROSDISTRO: ${{ matrix.ROSDISTRO }}
     - name: Build
@@ -33,10 +33,7 @@ jobs:
       run: |
         call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
         call "C:\opt\ros\%ROSDISTRO%\x64\setup.bat"
-        pushd src
-        git clone https://github.com/facontidavide/ros_type_introspection
-        popd
-        catkin_make install -DPYTHON_EXECUTABLE=C:\opt\ros\%ROSDISTRO%\x64\python.exe
+        colcon build -DPYTHON_EXECUTABLE=C:\opt\ros\%ROSDISTRO%\x64\python.exe
       env:
         ROSDISTRO: ${{ matrix.ROSDISTRO }}
 
