@@ -4,9 +4,6 @@ on:
   pull_request:
   push:
     branches:
-      - master
-      - melodic-devel
-      - noetic-devel
       - foxy-devel
   schedule:
     # every Monday
