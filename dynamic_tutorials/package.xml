@@ -6,7 +6,7 @@
   Minimal node for testing ros_azure_iothub dynamic reconfiguration of parameters
   </description>
 
-  <maintainer email="amhassa@microsoft.com">Amel Hassan</maintainer>
+  <maintainer email="riotsquad@microsoft.com">Amel Hassan</maintainer>
   <author>Amel Hassan</author>
   <license>MIT</license>
 
