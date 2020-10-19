@@ -10,8 +10,6 @@ if(MSVC)
   add_compile_options(/wd4267)
   # WORKAROUND: ros/message_event.h(217): warning C4127: conditional expression is constant
   add_compile_options(/wd4127)
-  # WORKAROUND: parson/parson.c(62): warning C4232: nonstandard extension used: 'parson_malloc'
-  add_compile_options(/wd4232)
 endif()
 
 find_package(catkin REQUIRED COMPONENTS
@@ -21,6 +19,11 @@ find_package(catkin REQUIRED COMPONENTS
   ros_type_introspection
   dynamic_reconfigure
 )
+
+find_package(unofficial-parson)
+if(unofficial-parson_FOUND)
+  message(STATUS "Found Parson")
+endif(unofficial-parson_FOUND)
 
 if(EXISTS "C:/opt/rosdeps/x64/include/azureiot")
   message(STATUS " ******************************")
@@ -47,15 +50,10 @@ find_package(azure_iot_sdks CONFIG)
 if(azure_iot_sdks_FOUND)
   message(STATUS "azure-iot-sdk-c is found - ${IOTHUB_CLIENT_INCLUDES}")
 elseif(EXISTS "/usr/include/azureiot")
-  set(IOTHUB_CLIENT_INCLUDES "/usr/include/azureiot" "/usr/include/azureiot/inc" "parson")
+  set(IOTHUB_CLIENT_INCLUDES "/usr/include/azureiot" "/usr/include/azureiot/inc")
 else()
   message(FATAL_ERROR "Cannot locate azure-iot-sdk-c. Please ensure that dependency has been installed and the CMAKE_PREFIX_PATH contains the path to azure_iot_sdksConfig.cmake")
 endif()
-
-add_library(parson STATIC
-  parson/parson.c
-  parson/parson.h
-)
 
 ###################################
 ## catkin specific configuration ##
@@ -80,7 +78,7 @@ link_directories(${catkin_LIBRARY_DIRS})
 
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
-  parson
+  unofficial::parson::parson
 )
 
 # prefer to use shared library.
@@ -112,7 +110,6 @@ else()
     crypto
     m
     uuid
-    parson
     prov_auth_client
     hsm_security_client
     uhttp  )
