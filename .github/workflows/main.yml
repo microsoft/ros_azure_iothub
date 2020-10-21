@@ -1,4 +1,3 @@
-
 name: CI
 on:
   pull_request:
@@ -33,7 +32,7 @@ jobs:
       run: |
         call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
         call "C:\opt\ros\%ROSDISTRO%\x64\setup.bat"
-        colcon build -DPYTHON_EXECUTABLE=C:\opt\ros\%ROSDISTRO%\x64\python.exe
+        colcon build --packages-select roscpp_azure_iothub 
       env:
         ROSDISTRO: ${{ matrix.ROSDISTRO }}
 
