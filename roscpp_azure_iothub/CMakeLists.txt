@@ -1,8 +1,30 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(roscpp_azure_iothub)
+
+# Default to C99
+if(NOT CMAKE_C_STANDARD)
+  set(CMAKE_C_STANDARD 99)
+endif()
+
+# Default to C++17
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
+
+if(NOT CMAKE_CXX_STANDARD_REQUIRED)
+  set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+endif()
+
+if(NOT CMAKE_CXX_EXTENSIONS)
+  set(CMAKE_CXX_EXTENSIONS FALSE)
+endif()
+
+if(MSVC)
+  add_compile_definitions(NOMINMAX)
+endif()
 
 if(MSVC)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
@@ -12,15 +34,14 @@ if(MSVC)
   add_compile_options(/wd4127)
   # WORKAROUND: parson/parson.c(62): warning C4232: nonstandard extension used: 'parson_malloc'
   add_compile_options(/wd4232)
+  # WORKAROUND: rclcpp/loaned_message.hpp(144,1): warning C4456: declaration of 'ret' hides previous local declaration 
+  add_compile_options(/wd4456)
 endif()
 
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  std_msgs
-  topic_tools
-  ros_type_introspection
-  dynamic_reconfigure
-)
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(std_msgs REQUIRED)
 
 if(EXISTS "C:/opt/rosdeps/x64/include/azureiot")
   message(STATUS " ******************************")
@@ -52,42 +73,28 @@ else()
   message(FATAL_ERROR "Cannot locate azure-iot-sdk-c. Please ensure that dependency has been installed and the CMAKE_PREFIX_PATH contains the path to azure_iot_sdksConfig.cmake")
 endif()
 
-add_library(parson STATIC
+add_library(parson STATIC 
   parson/parson.c
   parson/parson.h
-)
-
-###################################
-## catkin specific configuration ##
-###################################
-
-catkin_package(
-  CATKIN_DEPENDS roscpp std_msgs topic_tools ros_type_introspection
 )
 
 ###########
 ## Build ##
 ###########
 
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-  ${IOTHUB_CLIENT_INCLUDES}
-)
+include_directories(include)
 
 add_executable(${PROJECT_NAME}_node src/ros_azure_iothub_cpp_node.cpp)
+ament_target_dependencies(${PROJECT_NAME}_node rclcpp std_msgs) 
 
-link_directories(${catkin_LIBRARY_DIRS})
+target_link_libraries(${PROJECT_NAME}_node parson) 
 
-target_link_libraries(${PROJECT_NAME}_node
-  ${catkin_LIBRARIES}
-  parson
-)
 
 # prefer to use shared library.
 if (TARGET iothub_client_dll)
   message(STATUS "using iothub_client_dll")
 
-  target_link_libraries(${PROJECT_NAME}_node
+  target_link_libraries(${PROJECT_NAME}_node 
     $<TARGET_LINKER_FILE:iothub_client_dll>
   )
 elseif(TARGET iothub_client)
@@ -96,12 +103,12 @@ elseif(TARGET iothub_client)
   target_link_directories(${PROJECT_NAME}_node
     PRIVATE $<TARGET_LINKER_FILE_DIR:iothub_client>
   )
-  target_link_libraries(${PROJECT_NAME}_node
+  target_link_libraries(${PROJECT_NAME}_node 
     iothub_client
   )
 else()
   message(STATUS "using iot libs")
-  target_link_libraries(${PROJECT_NAME}_node
+  target_link_libraries(${PROJECT_NAME}_node 
     iothub_client
     iothub_client_mqtt_transport
     umqtt
@@ -123,13 +130,18 @@ endif()
 #############
 
 install(TARGETS ${PROJECT_NAME}_node
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
-install(DIRECTORY launch/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+install(TARGETS ${PROJECT_NAME}_node
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
 )
 
 #############
@@ -137,9 +149,14 @@ install(DIRECTORY launch/
 #############
 
 if(WIN32)
-  if(CATKIN_ENABLE_TESTING)
-    find_package(rostest REQUIRED)
-    add_rostest_gtest(${PROJECT_NAME}_testnode test/testiothub.launch test/testiothub.cpp)
-    target_link_libraries(${PROJECT_NAME}_testnode iothub_service_client ${catkin_LIBRARIES} )
+  if (BUILD_TESTING)
+    find_package(ament_cmake_gtest REQUIRED)
+    ament_add_gtest(${PROJECT_NAME}_testnode test/testiothub.launch test/testiothub.cpp)
+    ament_target_dependencies(${PROJECT_NAME}_testnode
+      "rclcpp"
+      "std_msgs")
+    target_link_libraries(${PROJECT_NAME}_testnode iothub_service_client)
   endif()
 endif()
+
+ament_package()
