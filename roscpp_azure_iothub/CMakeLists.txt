@@ -20,11 +20,6 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
 )
 
-find_package(unofficial-parson)
-if(unofficial-parson_FOUND)
-  message(STATUS "Found Parson")
-endif(unofficial-parson_FOUND)
-
 if(EXISTS "C:/opt/rosdeps/x64/include/azureiot")
   message(STATUS " ******************************")
   message(STATUS " *** Pardon the interuption ***")
@@ -50,7 +45,11 @@ find_package(azure_iot_sdks CONFIG)
 if(azure_iot_sdks_FOUND)
   message(STATUS "azure-iot-sdk-c is found - ${IOTHUB_CLIENT_INCLUDES}")
 elseif(EXISTS "/usr/include/azureiot")
-  set(IOTHUB_CLIENT_INCLUDES "/usr/include/azureiot" "/usr/include/azureiot/inc")
+  if(MSVC)
+    set(IOTHUB_CLIENT_INCLUDES "/usr/include/azureiot" "/usr/include/azureiot/inc")
+  else()
+    set(IOTHUB_CLIENT_INCLUDES "/usr/include/azureiot" "/usr/include/azureiot/inc" "parson")
+  endif()
 else()
   message(FATAL_ERROR "Cannot locate azure-iot-sdk-c. Please ensure that dependency has been installed and the CMAKE_PREFIX_PATH contains the path to azure_iot_sdksConfig.cmake")
 endif()
@@ -76,10 +75,22 @@ add_executable(${PROJECT_NAME}_node src/ros_azure_iothub_cpp_node.cpp)
 
 link_directories(${catkin_LIBRARY_DIRS})
 
-target_link_libraries(${PROJECT_NAME}_node
-  ${catkin_LIBRARIES}
-  unofficial::parson::parson
-)
+if(MSVC)
+  target_link_libraries(${PROJECT_NAME}_node
+    ${catkin_LIBRARIES}
+    unofficial::parson::parson
+  )
+else()
+  add_library(parson STATIC
+  parson/parson.c
+  parson/parson.h
+  )
+  target_link_libraries(${PROJECT_NAME}_node
+    ${catkin_LIBRARIES}
+    parson
+  )
+endif()
+
 
 # prefer to use shared library.
 if (TARGET iothub_client_dll)
