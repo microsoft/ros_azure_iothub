@@ -41,7 +41,7 @@ Here is an example how to build it for Ubuntu ROS Linux install.
 
 ``` bash
 # source ROS environment
-source /opt/ros/noetic/setup.bash
+source /opt/ros/melodic/setup.bash
 
 # create catkin workspace folders
 mkdir catkin_ws/src -p
