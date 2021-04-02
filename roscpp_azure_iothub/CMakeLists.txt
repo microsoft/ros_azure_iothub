@@ -10,6 +10,8 @@ if(MSVC)
   add_compile_options(/wd4267)
   # WORKAROUND: ros/message_event.h(217): warning C4127: conditional expression is constant
   add_compile_options(/wd4127)
+  # WORKAROUND: parson/parson.c(62): warning C4232: nonstandard extension used: 'parson_malloc'
+  add_compile_options(/wd4232)
 endif()
 
 find_package(catkin REQUIRED COMPONENTS
@@ -54,6 +56,11 @@ else()
   message(FATAL_ERROR "Cannot locate azure-iot-sdk-c. Please ensure that dependency has been installed and the CMAKE_PREFIX_PATH contains the path to azure_iot_sdksConfig.cmake")
 endif()
 
+add_library(parson STATIC
+  parson/parson.c
+  parson/parson.h
+)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -78,7 +85,7 @@ link_directories(${catkin_LIBRARY_DIRS})
 if(MSVC)
   target_link_libraries(${PROJECT_NAME}_node
     ${catkin_LIBRARIES}
-    unofficial::parson::parson
+    parson
   )
 else()
   add_library(parson STATIC
@@ -121,6 +128,7 @@ else()
     crypto
     m
     uuid
+    parson
     prov_auth_client
     hsm_security_client
     uhttp  )
