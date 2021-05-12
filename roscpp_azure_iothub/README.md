@@ -101,23 +101,29 @@ az iot hub monitor-events --hub-name <YourIoTHubName> --output table
 ```
 
 ##### Step by step tutorial: Viewing messages through the reported properties channel
-###### Step 1: 
-Create a new device twin on the Azure Portal. 
+###### Step 1:
+Create a new device twin on the Azure Portal.
+
 ![create device][create_device]
-###### Step 2: 
-Populate the device twin with the desired properties tag, adding in the topics you want to subscribe to and the method with which you wish to receive the published messages. In this example, we are subscribing to the /hello topic and we will receive the messages through the reported properties channel. 
+###### Step 2:
+Populate the device twin with the desired properties tag, adding in the topics you want to subscribe to and the method with which you wish to receive the published messages. In this example, we are subscribing to the /hello topic and we will receive the messages through the reported properties channel.
+
 ![desired properties][desired_properties]
-###### Step 3: 
+###### Step 3:
 Copy your device twin's connection string located in the Azure portal.
+
 ![connection string][connection_string]
-###### Step 4: 
-Locally, deploy any ROS nodes you wish. As an example we will be publishing to the topic /hello as the device twin will be subscribing to it. 
+###### Step 4:
+Locally, deploy any ROS nodes you wish. As an example we will be publishing to the topic /hello as the device twin will be subscribing to it.
+
 ![publish topic][publish_topic]
-###### Step 5: 
+###### Step 5:
 Launch the Azure Iot Hub ROS node and provide the connection string you just copied. 
+
 ![launch node][launch_node]
-###### Step 6: 
-Back in the Azure portal your device twin should be updated with the latest published messages to the topics it is subscribed to.  
+###### Step 6:
+Back in the Azure portal your device twin should be updated with the latest published messages for each topic it is subscribed to.
+
 ![reported properties][reported_properties]
 
 # Deployment (IoT Hub for dynamic configuration)
