@@ -94,13 +94,13 @@ Here is a JSON example to report `/rosout` via telemetry and `/initialpose` via 
 }
 ```
 
-Add the `ros_relays` block to the device twin which you are about to connect in the next step. Meanwhile, you can run the following Azure PowerShell cmdlet to wait for events from IoT Hub.
+Add the `ros_relays` block to the device twin. Use the client side deployment step to connect to your device. You can run the following Azure PowerShell cmdlet to wait for events from IoT Hub.
 
 ``` bash
 az iot hub monitor-events --hub-name <YourIoTHubName> --output table
 ```
 
-##### Step by step tutorial: Viewing messages through the reported properties channel
+#### Step by step tutorial: Viewing messages through the reported properties channel
 ###### Step 1:
 Create a new device twin on the Azure Portal.
 
