@@ -102,17 +102,13 @@ az iot hub monitor-events --hub-name <YourIoTHubName> --output table
 
 #### Step by step tutorial: Viewing messages through the reported properties channel
 ###### Step 1:
-Create a new device twin on the Azure Portal.
+Create a new device twin on the Azure Portal and copy the connection string.
 
 ![create device][create_device]
 ###### Step 2:
 Populate the device twin with the desired properties tag, adding in the topics you want to subscribe to and the method with which you wish to receive the published messages. In this example, we are subscribing to the /hello topic and we will receive the messages through the reported properties channel.
 
 ![desired properties][desired_properties]
-###### Step 3:
-Copy your device twin's connection string located in the Azure portal.
-
-![connection string][connection_string]
 ###### Step 4:
 Locally, deploy any ROS nodes you wish. As an example we will be publishing to the topic /hello as the device twin will be subscribing to it.
 
@@ -221,4 +217,4 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 [connection_string]: media/documentation/connection_string.gif
 [publish_topic]: media/documentation/publish_topic.gif
 [launch_node]: media/documentation/launch_node.gif
-[reported_properties]: media/documentation/reported_properties.png
+[reported_properties]: media/documentation/reported_properties.jpg
