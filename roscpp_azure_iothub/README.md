@@ -120,7 +120,7 @@ Launch the Azure Iot Hub ROS node and provide the connection string you just cop
 ### Step 6:
 Back in the Azure portal your device twin should be updated with the latest published messages for each topic it is subscribed to.
 
-![reported properties][reported_properties]
+<img src="docs/reported_properties.jpg" width="800" height="438"> 
 
 # Deployment (IoT Hub for dynamic configuration)
 [Dynamic Reconfiguration](http://wiki.ros.org/dynamic_reconfigure) provides a way to change the node parameters during runtime without restarting the node.
@@ -217,4 +217,3 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 [connection_string]: docs/connection_string.gif
 [publish_topic]: docs/publish_topic.gif
 [launch_node]: docs/launch_node.gif
-[reported_properties]: docs/reported_properties.jpg
