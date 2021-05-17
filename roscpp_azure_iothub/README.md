@@ -68,10 +68,11 @@ catkin_make install
 source /install/setup.bash
 ```
 
-# Deployment (IoT Hub for telemetry reporting)
-Device twins are JSON documents that store device state information including metadata, configurations, and conditions. Azure IoT Hub maintains a device twin for each device that you connect to IoT Hub. And we are using `desired` properties as a channel to ask our ROS node what ROS topics to report.
+# Deployment (IoT Hub for telemetry reporting or reported properties channel)
+Azure IoT Hub maintains a device twin for each device that you connect to IoT Hub. Device twins are JSON documents that store device state information including metadata, configurations, and conditions.
+We are using desired properties as a channel to ask our ROS node what ROS topics to report. The messages received from these ROS topics can either be reported through the telemetry channel or through the reported property channel on the device twin. The telemetry channel is designed for high bandwidth data and the history of messages sent over this channel are stored. The reported property channel is designed for low bandwidth data and it advertises only the latest message for each topic the device twin subscribes to. 
 
-Here is a JSON example to report `/rosout`:
+Here is a JSON example to report `/rosout` via telemetry and `/initialpose` via reported properties:
 
 ``` json
 {
@@ -79,18 +80,47 @@ Here is a JSON example to report `/rosout`:
     "properties": {
         "desired": {
             "ros_relays": {
-                "1": "/rosout"
+                "1": {
+                    "topic": "/rosout",
+                    "relay_method": "telemetry"
+                },
+                "2": {
+                    "topic": "/initialpose",
+                    "relay_method": "reported"
+                }
             }
         }
     }
 }
 ```
 
-And add the `ros_relays` block to the device twin which you are about to connect in the next step. Meanwhile, you can run the following Azure PowerShell cmdlet to wait for events from IoT Hub.
+Add the `ros_relays` block to the device twin. Use the client side deployment step to connect to your device. You can run the following Azure PowerShell cmdlet to wait for events from IoT Hub.
 
 ``` bash
 az iot hub monitor-events --hub-name <YourIoTHubName> --output table
 ```
+
+## Step by step tutorial: Viewing messages through the reported properties channel
+### Step 1:
+Create a new device twin on the Azure Portal and copy the connection string.
+
+![create device][create_device]
+### Step 2:
+Populate the device twin with the desired properties tag, adding in the topics you want to subscribe to and the method with which you wish to receive the published messages. In this example, we are subscribing to the /hello topic and we will receive the messages through the reported properties channel.
+
+![desired properties][desired_properties]
+### Step 4:
+Locally, deploy any ROS nodes you wish. As an example we will be publishing to the topic /hello as the device twin will be subscribing to it.
+
+![publish topic][publish_topic]
+### Step 5:
+Launch the Azure Iot Hub ROS node and provide the connection string you just copied. 
+
+![launch node][launch_node]
+### Step 6:
+Back in the Azure portal your device twin should be updated with the latest published messages for each topic it is subscribed to.
+
+<img src="docs/reported_properties.jpg" width="800"> 
 
 # Deployment (IoT Hub for dynamic configuration)
 [Dynamic Reconfiguration](http://wiki.ros.org/dynamic_reconfigure) provides a way to change the node parameters during runtime without restarting the node.
@@ -180,3 +210,10 @@ provided by the bot. You will only need to do this once across all repos using o
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
 contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+<!-- link to files -->
+[create_device]: docs/create_device.gif
+[desired_properties]: docs/desired_properties.gif
+[connection_string]: docs/connection_string.gif
+[publish_topic]: docs/publish_topic.gif
+[launch_node]: docs/launch_node.gif
