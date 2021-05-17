@@ -212,9 +212,9 @@ For more information see the [Code of Conduct FAQ](https://opensource.microsoft.
 contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
 <!-- link to files -->
-[create_device]: media/documentation/create_device.gif
-[desired_properties]: media/documentation/desired_properties.gif
-[connection_string]: media/documentation/connection_string.gif
-[publish_topic]: media/documentation/publish_topic.gif
-[launch_node]: media/documentation/launch_node.gif
-[reported_properties]: media/documentation/reported_properties.jpg
+[create_device]: docs/create_device.gif
+[desired_properties]: docs/desired_properties.gif
+[connection_string]: docs/connection_string.gif
+[publish_topic]: docs/publish_topic.gif
+[launch_node]: docs/launch_node.gif
+[reported_properties]: docs/reported_properties.jpg
