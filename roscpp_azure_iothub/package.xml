@@ -19,6 +19,6 @@
   <depend>std_msgs</depend>
   <depend>topic_tools</depend>
   <depend>ros_type_introspection</depend>
-  <depend>libazure-iot-sdk-c</depend>
+  <depend>azure-iot-sdk-c</depend>
   <test_depend>rosunit</test_depend>
 </package>
