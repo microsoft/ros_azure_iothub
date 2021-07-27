@@ -22,7 +22,7 @@ pushd catkin_ws
 pushd src
 git clone https://github.com/ms-iot/abseil-cpp -b init_windows
 git clone https://github.com/facontidavide/ros_type_introspection
-git clone --recursive https://github.com/Microsoft/ros_azure_iothub
+git clone -b melodic-devel --recursive https://github.com/Microsoft/ros_azure_iothub
 popd
 
 :: install system dependencies
@@ -48,7 +48,7 @@ catkin_init_workspace src
 
 # checkout required ROS package sources
 pushd src
-git clone --recursive https://github.com/Microsoft/ros_azure_iothub
+git clone -b melodic-devel --recursive https://github.com/Microsoft/ros_azure_iothub
 popd
 
 # install Azure IoT SDK as Debian
